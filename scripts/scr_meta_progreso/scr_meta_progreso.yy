@@ -1,0 +1,10 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_meta_progreso",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_meta_progreso",
+  "parent":{"name":"meta","path":"folders/scripts/meta.yy",},
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
