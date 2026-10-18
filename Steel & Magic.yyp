@@ -108,6 +108,7 @@
     {"id":{"name":"spr_orco_aviso","path":"sprites/spr_orco_aviso/spr_orco_aviso.yy",},},
     {"id":{"name":"spr_orco_caminar","path":"sprites/spr_orco_caminar/spr_orco_caminar.yy",},},
     {"id":{"name":"o_player","path":"objects/o_player/o_player.yy",},},
+    {"id":{"name":"o_spawner_oleadas","path":"objects/o_spawner_oleadas/o_spawner_oleadas.yy",},},
     {"id":{"name":"o_grieta_suelo","path":"objects/o_grieta_suelo/o_grieta_suelo.yy",},},
     {"id":{"name":"o_jefe_base","path":"objects/o_jefe_base/o_jefe_base.yy",},},
     {"id":{"name":"o_jefe_orco_mecha","path":"objects/o_jefe_orco_mecha/o_jefe_orco_mecha.yy",},},
