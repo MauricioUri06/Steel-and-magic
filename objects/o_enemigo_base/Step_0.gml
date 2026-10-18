@@ -29,5 +29,7 @@ var _hx = lengthdir_x(1, dir_mira);
 if (abs(_hx) > 0.2) lado = sign(_hx);
 
 // Separacion: si se encima con otro enemigo, se empuja un poco para que no se apilen.
-var _otro = instance_place(x, y, o_enemigo_base);
-if (_otro != noone) mover(point_direction(_otro.x, _otro.y, x, y), 0.6);
+if (!pesado) {
+    var _otro = instance_place(x, y, o_enemigo_base);
+    if (_otro != noone) mover(point_direction(_otro.x, _otro.y, x, y), 0.6);
+}

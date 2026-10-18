@@ -1,11 +1,10 @@
 // Con sprites si el enemigo los tiene (spr_por_estado); si no, formas simples provisionales.
-var _alpha = (estado == "muerto") ? timer / dur_muerto : 1;   // el cadaver se desvanece
+var _alpha = ((estado == "muerto") ? timer / dur_muerto : 1) * alpha_cuerpo;   // el cadaver se desvanece
 var _top   = y - radio;   // donde va la barra de vida
 
 if (es_enemigo) dibujar_suelo();
 
-var _spr = variable_struct_exists(spr_por_estado, estado) ? spr_por_estado[$ estado]
-         : (variable_struct_exists(spr_por_estado, "perseguir") ? spr_por_estado.perseguir : -1);
+var _spr = buscar_sprite();
 if (_spr != -1) {
     if (_spr != spr_actual) { spr_actual = _spr; anim = 0; }
     else anim += anim_vel;
@@ -16,7 +15,7 @@ if (_spr != -1) {
     if (flash > 0) {
         // destello blanco al recibir dano
         gpu_set_fog(true, c_white, 0, 1);
-        draw_sprite_ext(_spr, _img, x, y, lado * escala_sprite, escala_sprite, 0, c_white, 0.8);
+        draw_sprite_ext(_spr, _img, x, y, lado * escala_sprite, escala_sprite, 0, c_white, 0.8 * _alpha);
         gpu_set_fog(false, c_white, 0, 0);
     }
     _top = y - sprite_get_yoffset(_spr) * escala_sprite;
@@ -36,7 +35,7 @@ if (!es_enemigo) exit;   // muriendo: sin avisos ni barra de vida
 dibujar_extra();
 
 // barra de vida (solo si esta herido)
-if (hp < hp_max) {
+if (barra_vida && hp < hp_max) {
     var _w = radio * 2;
     var _bx = x - radio, _by = _top - 6;
     draw_set_color(c_black);

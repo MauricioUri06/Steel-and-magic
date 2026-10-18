@@ -7,8 +7,8 @@ if (!variable_instance_exists(id, "vel"))       vel       = 4;
 if (!variable_instance_exists(id, "dano"))      dano      = 2;
 if (!variable_instance_exists(id, "color"))     color     = c_aqua;
 
-radio     = 4;      // radio del impacto (px)
-alcance   = 600;    // distancia maxima antes de desaparecer
+if (!variable_instance_exists(id, "radio"))     radio     = 4;     // radio del impacto (px)
+if (!variable_instance_exists(id, "alcance"))   alcance   = 600;   // distancia maxima antes de desaparecer
 recorrido = 0;
 
 // _al_jugador = true si choco con el jugador; false si choco con una pared o llego al alcance.

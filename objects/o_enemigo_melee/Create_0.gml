@@ -32,7 +32,7 @@ comportamiento = function() {
             if (point_distance(x, y, o_player.x, o_player.y) <= rango_ataque && cd <= 0) {
                 estado = "aviso";
                 timer  = aviso;
-                if (tipo_ataque == "embestida") crear_grieta();
+                if (tipo_ataque == "embestida") crear_grieta(vel_embestida * dur_embestida);
             } else {
                 mover(dir_mira, vel);
             }
@@ -72,55 +72,7 @@ comportamiento = function() {
     }
 };
 
-// ===== Aviso de la embestida: una grieta en el suelo que avanza por el camino de la carga =====
-grieta_color = make_colour_rgb(25, 18, 14);
-grieta_luz   = make_colour_rgb(110, 95, 80);   // borde claro, da sensacion de profundidad
-grieta       = [];     // puntos del trazo principal: { d: distancia a lo largo, o: desvio lateral }
-grieta_ramas = [];     // ramitas: { d, ang, largo }
-grieta_x     = 0;      // desde donde sale (los pies al empezar el aviso)
-grieta_y     = 0;
-
-// Se genera una vez por ataque (si se generara en cada Draw, temblaria).
-crear_grieta = function() {
-    grieta = []; grieta_ramas = [];
-    grieta_x = x;
-    grieta_y = y + pies_dy();
-    var _largo = vel_embestida * dur_embestida, _o = 0;
-    for (var _d = 0; _d <= _largo; _d += 7) {
-        _o = clamp(_o + irandom_range(-3, 3), -5, 5);
-        array_push(grieta, { d: _d, o: (_d == 0) ? 0 : _o });
-        if (_d > 10 && random(1) < 0.3) {
-            array_push(grieta_ramas, { d: _d, o: _o, ang: choose(-1, 1) * irandom_range(30, 60), largo: irandom_range(5, 10) });
-        }
-    }
-};
-
-// punto de la grieta en coordenadas del room
-grieta_px = function(_d, _o) { return grieta_x + lengthdir_x(_d, dir_mira) + lengthdir_x(_o, dir_mira + 90); };
-grieta_py = function(_d, _o) { return grieta_y + lengthdir_y(_d, dir_mira) + lengthdir_y(_o, dir_mira + 90); };
-
+// Aviso de la embestida: la grieta del base crece durante el aviso y desaparece al empezar la carga.
 dibujar_suelo = function() {
-    // solo durante el aviso: crece y desaparece en cuanto empieza la carga
-    if (tipo_ataque != "embestida" || estado != "aviso" || array_length(grieta) == 0) return;
-    var _alpha = 0.85;
-    var _max = min(1, (1 - timer / aviso) / 0.7) * grieta[array_length(grieta) - 1].d;
-
-    draw_set_alpha(_alpha);
-    for (var _i = 1; _i < array_length(grieta); _i++) {
-        var _a = grieta[_i - 1], _b = grieta[_i];
-        if (_b.d > _max) break;
-        var _w = lerp(3, 1, _b.d / max(1, _max + 7));   // mas ancha cerca del enemigo
-        draw_set_color(grieta_luz);
-        draw_line_width(grieta_px(_a.d, _a.o), grieta_py(_a.d, _a.o) + 1, grieta_px(_b.d, _b.o), grieta_py(_b.d, _b.o) + 1, 1);
-        draw_set_color(grieta_color);
-        draw_line_width(grieta_px(_a.d, _a.o), grieta_py(_a.d, _a.o), grieta_px(_b.d, _b.o), grieta_py(_b.d, _b.o), _w);
-    }
-    draw_set_color(grieta_color);
-    for (var _j = 0; _j < array_length(grieta_ramas); _j++) {
-        var _r = grieta_ramas[_j];
-        if (_r.d > _max) continue;
-        var _x0 = grieta_px(_r.d, _r.o), _y0 = grieta_py(_r.d, _r.o);
-        draw_line_width(_x0, _y0, _x0 + lengthdir_x(_r.largo, dir_mira + _r.ang), _y0 + lengthdir_y(_r.largo, dir_mira + _r.ang), 1);
-    }
-    draw_set_alpha(1);
+    if (tipo_ataque == "embestida" && estado == "aviso") dibujar_grieta(min(1, (1 - timer / aviso) / 0.7));
 };
