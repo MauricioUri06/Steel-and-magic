@@ -13,7 +13,7 @@ function meta_inicializar() {
         mejoras: [
             { id:"vida_maxima", nombre:"VIDA MAXIMA", efecto:"+5 HP", max_nivel:10, nivel:0, costo_base:20, crecimiento:1.45, icon_x:96,  icon_y:576 },
             { id:"velocidad", nombre:"VELOCIDAD", efecto:"+2%", max_nivel:5, nivel:0, costo_base:35, crecimiento:1.70, icon_x:208, icon_y:576 },
-            { id:"dano", nombre:"ATAQUE", efecto:"+3%", max_nivel:5, nivel:0, costo_base:45, crecimiento:1.75, icon_x:320, icon_y:576 },
+            { id:"dano", nombre:"ATAQUE", efecto:"+8%", max_nivel:5, nivel:0, costo_base:45, crecimiento:1.75, icon_x:320, icon_y:576 },
             { id:"dash", nombre:"DASH", efecto:"DISTANCIA Y RECARGA", max_nivel:5, nivel:0, costo_base:60, crecimiento:1.80, icon_x:432, icon_y:576 },
             { id:"radio_monedas", nombre:"RADIO DE EXPERIENCIA", efecto:"+10%", max_nivel:3, nivel:0, costo_base:40, crecimiento:1.90, icon_x:544, icon_y:576 },
             { id:"bonus_monedas", nombre:"MONEDAS GANADAS", efecto:"+5%", max_nivel:5, nivel:0, costo_base:55, crecimiento:1.90, icon_x:656, icon_y:576 },
@@ -126,7 +126,7 @@ function meta_obtener_bonos() {
     return {
         vida_extra: 5 * _m[0].nivel,
         multiplicador_velocidad: 1 + 0.02 * _m[1].nivel,
-        multiplicador_dano: 1 + 0.03 * _m[2].nivel,
+        multiplicador_dano: 1 + 0.08 * _m[2].nivel,
         multiplicador_dash_distancia: 1 + 0.08 * _m[3].nivel,
         multiplicador_dash_recarga: max(0.60, 1 - 0.06 * _m[3].nivel),
         cargas_dash_extra: floor(_m[3].nivel / 2),

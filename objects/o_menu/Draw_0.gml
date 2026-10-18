@@ -46,25 +46,57 @@ if (pantalla == "principal") {
 }
 else if (pantalla == "tutorial") {
     dibujar_panel("Tutorial");
+    // El contenido se recorta entre el titulo y el boton Volver y se desplaza con tut_scroll
+    var _ar_top = 142, _ar_bot = 560;
+    var _sc = gpu_get_scissor();
+    gpu_set_scissor(140, _ar_top, room_width - 280, _ar_bot - _ar_top);
+    var _off = -round(tut_scroll);
     var _filas = [
         ["W A S D / Flechas", "Moverte"],
         ["Mouse",             "Apuntar"],
         ["Clic izquierdo",    "Atacar (mantenlo para seguir atacando)"],
         ["Rueda del mouse",   "Cambiar de clase: Caballero, Mago o Soldado"],
-        ["Espacio",           "Dash: esquiva y hace daño a quien atraviesas"]
+        ["Espacio",           "Dash: esquiva y hace daño a quien atraviesas"],
+        ["M",                 "Ver las cartas (mejoras) que llevas en la partida"],
+        ["Esc",               "Pausar el juego"]
     ];
     draw_set_font(fuente_texto);
     draw_set_valign(fa_middle);
     for (var _r = 0; _r < array_length(_filas); _r++) {
-        var _y = 185 + _r * 44;
+        var _y = 160 + _r * 32 + _off;
         draw_set_halign(fa_left);
         draw_text_colour(200, _y, _filas[_r][0], col_cian, col_cian, col_cian, col_cian, 1);
         draw_text_colour(470, _y, _filas[_r][1], col_texto, col_texto, col_texto, col_texto, 1);
     }
     draw_set_halign(fa_center);
     draw_set_valign(fa_top);
-    draw_text_ext_colour(room_width / 2, 415, "Mago: mantén el clic para cargar la bola de fuego. Mientras más la cargues, más grande, más daño y más fuego deja en el suelo.", 30, 860, col_oro, col_oro, col_oro, col_oro, 1);
-    draw_text_ext_colour(room_width / 2, 485, "Sobrevive a las oleadas, derrota enemigos y gana monedas para mejorar a tu héroe.", 30, 860, col_texto, col_texto, col_texto, col_texto, 1);
+    // Parrafos apilados: cada uno empieza justo debajo del anterior, asi no se pisan aunque cambie cuantas lineas ocupan
+    var _par = [
+        { txt: "Mago: mantén el clic para cargar la bola: más grande, más daño y más fuego en el suelo.", col: col_oro },
+        { txt: "Derrota enemigos y recoge su experiencia: al subir de nivel eliges 1 de 3 cartas (clic o A / D, y Confirmar).", col: col_texto },
+        { txt: "Las cartas raras y épicas salen menos. Al morir ganas monedas para las mejoras permanentes del menú.", col: col_texto }
+    ];
+    var _py = 380 + _off;
+    for (var _p = 0; _p < array_length(_par); _p++) {
+        draw_text_ext_colour(room_width / 2, _py, _par[_p].txt, 28, 900, _par[_p].col, _par[_p].col, _par[_p].col, _par[_p].col, 1);
+        _py += string_height_ext(_par[_p].txt, 28, 900) + 6;
+    }
+    gpu_set_scissor(_sc);
+    // cuanto contenido queda fuera del area visible (lo usa Step_0 para limitar el scroll)
+    tut_max = max(0, (_py - _off) - _ar_bot);
+    // barra de scroll, solo si hace falta
+    if (tut_max > 0) {
+        var _bx = room_width - 140 - 22, _bt = _ar_top + 6, _bh = _ar_bot - _ar_top - 12;
+        var _th = max(30, _bh * (_ar_bot - _ar_top) / (_ar_bot - _ar_top + tut_max));
+        var _ty2 = _bt + (_bh - _th) * (tut_scroll / tut_max);
+        draw_set_alpha(0.35);
+        draw_set_color(col_cian);
+        draw_rectangle(_bx, _bt, _bx + 5, _bt + _bh, false);
+        draw_set_alpha(1);
+        draw_set_color(col_oro);
+        draw_rectangle(_bx, _ty2, _bx + 5, _ty2 + _th, false);
+        draw_set_color(c_white);
+    }
     dibujar_boton(room_width / 2, volver_cy, volver_frame, volver_spr);
 }
 else if (pantalla == "mejoras") {

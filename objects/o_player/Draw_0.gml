@@ -1,10 +1,13 @@
 gpu_set_texfilter(false);   // pixel art nitido, aunque el juego arranque directo en un acto (el menu es quien lo apaga normalmente)
+explosiones_dibujar();      // anillos de las balas explosivas
 // Espejismos del dash (detras del jugador): se van desvaneciendo
 for (var _i = 0; _i < array_length(espejismos); _i++) {
     var _e = espejismos[_i];
     var _t = _e.vida / espejismo_vida;   // 1 -> 0
     draw_sprite_ext(_e.spr, _e.img, _e.x, _e.y, _e.esc, _e.esc, 0, espejismo_color, espejismo_alpha * _t);
 }
+
+if (muerto) exit;   // muerto: el jugador, la bola del mago y la flecha ya no se dibujan (la animacion de muerte se dibuja en el Draw GUI)
 
 // Dibuja el sprite escalado y anclado a los pies (los pies estan en y_local = 30, origen en 16)
 var _s = escala[$ clase][$ anim][$ facing] * escala_jugador;

@@ -66,6 +66,9 @@ draw_set_halign(fa_left);
 // Cartel de acto ("ACTO I", "ACTO II", "ACTO III") en dorado, arriba
 acto_dibujar();
 
+// Resultado de la carta Apuesta
+apuesta_dibujar();
+
 // Pantalla de subida de nivel: las cartas al centro y el boton Confirmar
 cartas_dibujar_ui();
 

@@ -14,6 +14,7 @@ for (var _k = 0; _k < _nhit; _k++) {
     _impacto = true;
     if (variable_instance_exists(_en, "recibir_dano")) _en.recibir_dano(dano);
     else if (variable_instance_exists(_en, "hp")) _en.hp -= dano;
+    if (instance_exists(o_player)) o_player.golpe_extra(_en, direccion);   // carta Empuje
 }
 ds_list_destroy(_lista);
 

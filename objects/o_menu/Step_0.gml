@@ -52,6 +52,14 @@ if (!fade_saliendo) {
         if (sel >= 0 && (_clic || _enter)) menu_accion(botones[sel].accion);
         _resaltado = sel;
     } else if (pantalla == "tutorial") {
+        // Tutorial: scroll con la rueda del mouse, flechas arriba/abajo, W/S o RePag/AvPag
+        var _paso = (mouse_wheel_down() - mouse_wheel_up()) * 40;
+        if (keyboard_check(vk_down) || keyboard_check(ord("S"))) _paso += 7;
+        if (keyboard_check(vk_up)   || keyboard_check(ord("W"))) _paso -= 7;
+        if (keyboard_check_pressed(vk_pagedown)) _paso += 300;
+        if (keyboard_check_pressed(vk_pageup))   _paso -= 300;
+        tut_scroll_obj = clamp(tut_scroll_obj + _paso, 0, tut_max);
+        tut_scroll += (tut_scroll_obj - tut_scroll) * 0.35;
         // Tutorial: boton Volver, Esc, Backspace o Enter
         volver_hover = point_in_rectangle(_mx, _my, room_width / 2 - boton_w / 2, volver_cy - boton_h / 2, room_width / 2 + boton_w / 2, volver_cy + boton_h / 2);
         var _volver = (bloqueo <= 0) && ((volver_hover && mouse_check_button_pressed(mb_left))

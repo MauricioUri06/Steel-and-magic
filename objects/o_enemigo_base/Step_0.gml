@@ -18,6 +18,26 @@ if (hp <= 0) {
 
 if (flash > 0) flash -= 1;
 
+// Estados de las cartas del jugador: lentitud, quemadura y empuje (ver o_enemigo_base/Create_0)
+if (lento_t > 0) {
+    lento_t -= 1;
+    if (lento_t <= 0) lento_f = 1;
+}
+if (quemadura_t > 0) {
+    quemadura_t -= 1;
+    quemadura_tick -= 1;
+    if (quemadura_tick <= 0) {
+        quemadura_tick = 30;
+        recibir_dano(quemadura_dano);   // pasa por recibir_dano: escudos y jefes aplican lo suyo
+    }
+}
+if (emp_f > 0.3) {
+    mover_crudo(emp_dir, emp_f);
+    emp_f *= 0.78;
+} else {
+    emp_f = 0;
+}
+
 // la mascara mide 24 px (radio 12): se escala para que coincida con el tamano dibujado
 image_xscale = radio / 12;
 image_yscale = image_xscale;

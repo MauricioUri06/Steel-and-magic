@@ -26,6 +26,7 @@ if (sala_destino != -1) {
 if (jefe_actual != noone && (!instance_exists(jefe_actual) || !jefe_actual.es_enemigo)) {
     jefe_actual = noone;
     if (jefe_sala != -1) {
+        sfx_jingle(sfx_jefe);   // fanfarria de jefe vencido (el jefe final no: ese activa la victoria de mas abajo)
         sala_destino = jefe_sala;
         jefe_sala = -1;
         trans_t = 0;
@@ -58,7 +59,10 @@ var _jefe = jefe_vivo();
 
 // ===== Victoria: se lanzo la ultima oleada (el jefe final) y ya no queda jefe =====
 if (oleada >= total_oleadas) {
-    if (array_length(cola) == 0 && !_jefe) victoria = true;
+    if (array_length(cola) == 0 && !_jefe) {
+        victoria = true;
+        sfx_jingle(sfx_victoria);   // gran fanfarria de la ultima oleada
+    }
     exit;
 }
 

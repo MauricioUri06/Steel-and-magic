@@ -12,6 +12,18 @@ if (_spr != -1) {
     var _n = sprite_get_number(_spr);
     var _img = (estado == "cayendo" || estado == "muerto" || estado == "recuperar") ? min(anim, _n - 1) : anim mod _n;
     draw_sprite_ext(_spr, _img, x, y, lado * escala_sprite, escala_sprite, 0, c_white, _alpha);
+    if (quemadura_t > 0 || lento_t > 0) {
+        // tinte: naranja si arde, celeste si esta ralentizado (si ambos, el celeste encima)
+        if (quemadura_t > 0) {
+            gpu_set_fog(true, make_colour_rgb(255, 120, 30), 0, 1);
+            draw_sprite_ext(_spr, _img, x, y, lado * escala_sprite, escala_sprite, 0, c_white, 0.3 * _alpha);
+        }
+        if (lento_t > 0) {
+            gpu_set_fog(true, make_colour_rgb(80, 190, 255), 0, 1);
+            draw_sprite_ext(_spr, _img, x, y, lado * escala_sprite, escala_sprite, 0, c_white, 0.28 * _alpha);
+        }
+        gpu_set_fog(false, c_white, 0, 0);
+    }
     if (flash > 0) {
         // destello blanco al recibir dano
         gpu_set_fog(true, c_white, 0, 1);

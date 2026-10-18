@@ -7,7 +7,7 @@ if (!variable_instance_exists(id, "dano"))      dano      = 4;
 if (!variable_instance_exists(id, "escala"))    escala    = 1;
 
 velocidad     = 6;      // px por paso
-alcance       = 40;    // rango maximo (px): al llegar aqui empieza a desaparecer
+if (!variable_instance_exists(id, "alcance")) alcance = 40;   // rango maximo (px): al llegar aqui empieza a desaparecer (o_player lo agranda con la carta Tajo mas largo)
 recorrido     = 0;
 anim_vel      = 0.33;   // cuadros por paso (0.25 = 15 cuadros por segundo)
 desvaneciendo = false;  // true = ya esta desapareciendo (animacion inversa) y NO hace dano
