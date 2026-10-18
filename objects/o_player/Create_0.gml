@@ -3,6 +3,7 @@
 // (mueve la instancia sola hacia la derecha), por eso se renombra a move_speed.
 move_speed = 5;
 hp = 30;
+hp_max = 30;   // vida maxima (la curacion no pasa de aqui)
 
 // ===== Clases (se cambian con la rueda del mouse) =====
 clases        = ["cab", "mago", "sol"];
@@ -152,8 +153,8 @@ carga_dist = 0;   // distancia actual de la bola al jugador
 // Para darle una al jugador:  o_player.mejora_subir("dash_cargas");   (devuelve false si ya esta al maximo)
 // Mientras debug_mejoras sea true:  tecla 1 = +1 carga de dash | 2 = dash recarga mas rapido | 3 = un tajo mas del caballero
 debug_mejoras = true;
-mejoras     = { dash_cargas: 0, dash_recarga: 0, tajos: 0 };
-mejoras_max = { dash_cargas: 2, dash_recarga: 1, tajos: 2 };
+mejoras     = { dash_cargas: 0, dash_recarga: 0, tajos: 0, curacion: 0, armadura: 0, vel_ataque: 0 };
+mejoras_max = { dash_cargas: 2, dash_recarga: 1, tajos: 2, curacion: 3, armadura: 3, vel_ataque: 3 };
 
 mejora_subir = function(_id) {
     if (!variable_struct_exists(mejoras, _id)) return false;
@@ -246,7 +247,10 @@ if (!variable_global_exists("pausa_ui") || is_undefined(global.pausa_ui)) {
         spr_reanudar: _crear("Reanudar", _fp),
         spr_menu:     _crear("Menú principal", _fp),
         spr_mejoras:  _crear("Mejoras", _fp),
-        spr_fallo:    _crear("HAS FALLADO", _ft)
+        spr_fallo:    _crear("HAS FALLADO", _ft),
+        spr_acto1:    _crear("ACTO I", _ft),
+        spr_acto2:    _crear("ACTO II", _ft),
+        spr_acto3:    _crear("ACTO III", _ft)
     };
     font_delete(_fp);
     font_delete(_ft);
@@ -278,6 +282,7 @@ pausa_actualizar = function() {
             // Aqui room_goto(rm_menu) NO cambiaba de room (probado: rm_menu, room_first y por nombre). game_restart() si funciona
             // y deja el juego en la primera room (el menu). Antes se liberan los recursos creados a mano, para que no queden handles invalidos.
             show_debug_message("[pausa] volviendo al menu con game_restart()");
+            cartas_liberar();
             if (sprite_exists(spr_captura)) sprite_delete(spr_captura);
             spr_captura = -1;
             if (variable_global_exists("pausa_ui") && !is_undefined(global.pausa_ui)) {
@@ -286,14 +291,24 @@ pausa_actualizar = function() {
                 sprite_delete(global.pausa_ui.spr_menu);
                 sprite_delete(global.pausa_ui.spr_mejoras);
                 sprite_delete(global.pausa_ui.spr_fallo);
+                sprite_delete(global.pausa_ui.spr_acto1);
+                sprite_delete(global.pausa_ui.spr_acto2);
+                sprite_delete(global.pausa_ui.spr_acto3);
                 global.pausa_ui = undefined;
             }
+            // Se avisa con un archivo porque no se sabe si las variables globales sobreviven a game_restart():
+            // a) si la primera room no es rm_menu (por ejemplo al probar un acto directo), el jugador nuevo lo lleva al menu (ver ir_menu);
+            // b) o_menu lee "pantalla" para abrir directo la pantalla Mejoras (boton Mejoras de la muerte).
+            ini_open("arranque.ini");
+            ini_write_string("arranque", "destino", "menu");
+            ini_write_string("arranque", "pantalla", p_menu_pantalla);
+            ini_close();
             game_restart();
         }
     }
     else if (!global.pausa) {
         // jugando: Esc pausa
-        if (keyboard_check_pressed(vk_escape) && p_bloqueo <= 0 && !muerto) {
+        if (keyboard_check_pressed(vk_escape) && p_bloqueo <= 0 && !muerto && !cartas_abierto && !mejoras_abierto) {
             // foto del ultimo cuadro (sin interfaz) para seguir viendo el juego detras del menu
             spr_captura = sprite_create_from_surface(application_surface, 0, 0, surface_get_width(application_surface), surface_get_height(application_surface), false, false, 0, 0);
             global.pausa = true;
@@ -352,14 +367,14 @@ pausa_actualizar = function() {
 
 // Draw GUI, al INICIO: foto del juego oscurecida (la interfaz del jugador se dibuja encima)
 pausa_dibujar_fondo = function() {
-    if ((global.pausa || muerto) && sprite_exists(spr_captura)) {
+    if ((global.pausa || muerto || cartas_abierto || mejoras_abierto) && sprite_exists(spr_captura)) {
         var _gw = display_get_gui_width();
         var _gh = display_get_gui_height();
         draw_set_color(c_black);
         draw_set_alpha(1);
         draw_rectangle(-1, -1, _gw + 1, _gh + 1, false);
         draw_sprite_stretched(spr_captura, 0, 0, 0, _gw, _gh);
-        draw_set_alpha(global.pausa ? 0.5 : 0);   // oscurecido solo en la pausa: sube el numero para oscurecer mas
+        draw_set_alpha(global.pausa ? 0.5 : ((cartas_abierto || mejoras_abierto) ? 0.65 : 0));   // oscurecido solo en la pausa: sube el numero para oscurecer mas
         draw_rectangle(-1, -1, _gw + 1, _gh + 1, false);
         draw_set_alpha(1);
         draw_set_color(c_white);
@@ -457,7 +472,7 @@ muerte_actualizar = function() {
 
     if (!muerto) {
         // jugando: P apretada 3 s (prueba) o sin vida
-        if (debug_morir && !global.pausa && keyboard_check(ord("P"))) {
+        if (debug_morir && !global.pausa && !cartas_abierto && !mejoras_abierto && keyboard_check(ord("P"))) {
             morir_t += 1;
             if (morir_t >= morir_seg * _fps) morir();
         } else {
@@ -501,8 +516,8 @@ muerte_actualizar = function() {
         else if (keyboard_check_pressed(vk_enter) && m_sel >= 0) _accion = m_botones[m_sel].accion;   // solo Enter (Espacio es el dash)
 
         if (_accion != "") {
-            // o_menu lee esto al nacer: "mejoras" abre directo la pantalla de Mejoras
-            global.menu_inicio = (_accion == "mejoras") ? "mejoras" : "principal";
+            // se guarda en arranque.ini antes de reiniciar (ver pausa_actualizar); o_menu abre directo la pantalla Mejoras
+            p_menu_pantalla = (_accion == "mejoras") ? "mejoras" : "principal";
             p_saliendo = true;   // pausa_actualizar libera los recursos y llama a game_restart()
             show_debug_message("[muerte] elegido: " + _accion);
         }
@@ -539,6 +554,509 @@ muerte_dibujar_ui = function() {
         draw_sprite_ext(_b.spr, 0, _gw / 2, _cy + p_esc, p_esc, p_esc, 0, _sombra, _a);
         draw_sprite_ext(_b.spr, 0, _gw / 2, _cy,         p_esc, p_esc, 0, _col, _a);
     }
+    gpu_set_texfilter(_tf);
+    draw_set_alpha(1);
+    draw_set_color(c_white);
+};
+
+// ===== Cartel de acto: "ACTO I", "ACTO II" o "ACTO III" =====
+// Al entrar a cada room de acto aparece arriba, en dorado: baja un poco mientras aparece, se queda y se desvanece.
+// El cambio de room se detecta en el Step (acto_actualizar), asi funciona aunque este objeto sea persistente.
+// Para sumar otro acto: agregar su room en acto_actualizar y su texto en global.pausa_ui (mas arriba).
+acto_room     = -1;    // ultima room que se vio
+acto_num      = 0;     // 1, 2 o 3 (0 = la room actual no es un acto)
+acto_t        = 0;     // pasos desde que empezo el cartel
+acto_in_seg   = 0.8;   // segundos que tarda en aparecer
+acto_hold_seg = 2.2;   // segundos que se queda completo
+acto_out_seg  = 1.2;   // segundos que tarda en desvanecerse
+acto_y        = 90;    // altura del texto en pantalla (px, de arriba hacia abajo)
+
+acto_actualizar = function() {
+    if (room != acto_room) {
+        acto_room = room;
+        acto_t = 0;
+        if (room == rm_acto_1_ruinas)         acto_num = 1;
+        else if (room == rm_acto_2_oxidado)   acto_num = 2;
+        else if (room == rm_acto_3_fortaleza) acto_num = 3;
+        else                                  acto_num = 0;
+    }
+    // si el nivel aparece desde negro, el cartel espera a que ya se vea
+    if (acto_num > 0 && alpha_entrada <= 0.4) acto_t += 1;
+};
+
+// Draw GUI, antes de los fundidos (asi el fundido de entrada y el de la muerte lo cubren)
+acto_dibujar = function() {
+    if (acto_num <= 0 || muerto || global.pausa || cartas_abierto || mejoras_abierto) return;
+    var _t = acto_t / game_get_speed(gamespeed_fps);
+    var _a;
+    if (_t < acto_in_seg)                       _a = _t / acto_in_seg;
+    else if (_t < acto_in_seg + acto_hold_seg)  _a = 1;
+    else                                        _a = 1 - (_t - acto_in_seg - acto_hold_seg) / acto_out_seg;
+    _a = clamp(_a, 0, 1);
+    if (_a <= 0) return;
+    var _lista = [global.pausa_ui.spr_acto1, global.pausa_ui.spr_acto2, global.pausa_ui.spr_acto3];
+    var _spr = _lista[acto_num - 1];
+    var _gw = display_get_gui_width();
+    var _y = acto_y - (1 - _a) * 12;   // sube un poco mientras aparece
+    var _tf = gpu_get_texfilter();
+    gpu_set_texfilter(false);
+    draw_sprite_ext(_spr, 0, _gw / 2 + 4, _y + 4, 4, 4, 0, c_black, 0.7 * _a);
+    draw_sprite_ext(_spr, 0, _gw / 2,     _y,     4, 4, 0, make_colour_rgb(255, 214, 102), _a);
+    gpu_set_texfilter(_tf);
+};
+
+// ===== Pixel art nitido =====
+// El menu apaga el suavizado de texturas, pero si el juego arranca directo en un acto (sin pasar por el menu) el sprite se veria borroso.
+gpu_set_texfilter(false);
+
+// ===== Volver al menu despues de reiniciar =====
+// pausa_actualizar escribe arranque.ini antes de game_restart(). game_restart() carga la PRIMERA room del orden de rooms:
+// si es rm_menu, o_menu se encarga; si no (por ejemplo al probar el acto 2 o 3 poniendolo primero), este jugador lo lleva
+// al menu en su primer Step. o_menu borra el archivo al abrir.
+p_menu_pantalla = "principal";   // pantalla en la que abre el menu: "principal" o "mejoras"
+ir_menu         = false;
+ir_menu_espera  = 0;             // pasos de espera para comprobar que el cambio de room funciono
+if (file_exists("arranque.ini")) {
+    ini_open("arranque.ini");
+    ir_menu = (ini_read_string("arranque", "destino", "") == "menu");
+    ini_close();
+}
+
+// ===== Experiencia, niveles y cartas =====
+// - Los enemigos dan experiencia al morir:   o_player.enemigo_derrotado(xp);   (cuenta la baja y suma la experiencia)
+//   Si solo hay que dar experiencia sin contar una baja:   o_player.ganar_xp(cantidad);
+// - Al juntar la experiencia necesaria se sube de nivel, el juego se pausa y aparecen las cartas en el centro (hasta 3 distintas).
+//   Se elige una, aparece el boton "Confirmar" debajo y al confirmar se aplica la mejora y se sigue jugando.
+// - Cada nivel pide mas experiencia que el anterior:  xp_necesaria(nivel) = xp_base * xp_crece ^ (nivel - 1)
+// - Para sumar una carta nueva: agregarla a cartas_def (sprite + id de mejora), a mejoras / mejoras_max (mas arriba) y darle su efecto.
+// - Para que los enemigos le hagan dano al jugador:   o_player.recibir_dano(cantidad);   (la armadura lo reduce y el dash lo evita)
+debug_cartas = true;     // true: X = +5 de experiencia, K = cuenta un enemigo derrotado (+1 xp), H = recibes 5 de dano. Ponlo en false cuando haya enemigos.
+nivel        = 1;
+xp           = 0;
+xp_base      = 10;       // experiencia para pasar del nivel 1 al 2
+xp_crece     = 1.25;     // cada nivel pide este numero de veces mas que el anterior (sube este numero para hacerlo mas dificil)
+xp_necesaria = function(_n) { return round(xp_base * power(xp_crece, _n - 1)); };
+xp_sig       = xp_necesaria(1);   // experiencia que falta llenar para el siguiente nivel
+cartas_pendientes   = 0;  // niveles ganados que todavia no eligieron carta
+enemigos_derrotados = 0;
+
+// Efectos de las cartas (por nivel de la carta; cada carta llega hasta el nivel 3)
+armadura_por_nivel   = 0.08;   // Armadura: reduce 8% el dano recibido por nivel
+vel_ataque_por_nivel = 0.15;   // Velocidad de ataque: +15% por nivel (caballero: tajos mas seguidos | soldado: mas cadencia | mago: recarga mas corta)
+curacion_cada        = 10;     // Curacion: cada tantos enemigos derrotados...
+curacion_por_nivel   = 2;      // ...recupera esta cantidad de vida por nivel de la carta
+curacion_cont        = 0;      // enemigos derrotados desde la ultima curacion
+clic_bloqueado       = false;  // true tras confirmar una carta: no ataca hasta soltar el clic
+
+reduccion_dano  = function() { return clamp(armadura_por_nivel * mejoras.armadura, 0, 0.75); };
+vel_ataque_mult = function() { return 1 + vel_ataque_por_nivel * mejoras.vel_ataque; };
+
+curar = function(_cantidad) {
+    if (muerto) return;
+    hp = min(hp_max, hp + _cantidad);
+};
+
+recibir_dano = function(_cantidad) {
+    if (muerto || inmune) return;
+    hp -= _cantidad * (1 - reduccion_dano());
+};
+
+ganar_xp = function(_cantidad) {
+    if (muerto) return;
+    xp += _cantidad;
+    while (xp >= xp_sig) {
+        xp -= xp_sig;
+        nivel += 1;
+        xp_sig = xp_necesaria(nivel);
+        cartas_pendientes += 1;
+        show_debug_message("[xp] subiste al nivel " + string(nivel) + " (siguiente nivel: " + string(xp_sig) + " xp)");
+    }
+};
+
+enemigo_derrotado = function(_xp = 1) {
+    enemigos_derrotados += 1;
+    if (mejoras.curacion > 0) {
+        curacion_cont += 1;
+        if (curacion_cont >= curacion_cada) {
+            curacion_cont = 0;
+            curar(curacion_por_nivel * mejoras.curacion);
+        }
+    }
+    ganar_xp(_xp);
+};
+
+// Cartas disponibles: sprite (190x288, ya trae el texto dibujado) y la mejora que dan.
+// Referenciados por nombre para que GameMaker no los quite al compilar.
+cartas_def = [
+    { mejora: "curacion",   spr: s_carta_curacion,          nombre: "Curacion" },
+    { mejora: "armadura",   spr: s_carta_armadura,          nombre: "Armadura" },
+    { mejora: "vel_ataque", spr: s_carta_velocidad_ataque,  nombre: "Velocidad de ataque" }
+];
+cartas_max_opciones = 3;   // cuantas cartas se ofrecen cada vez
+cartas_opciones = [];      // indices de cartas_def ofrecidos ahora
+cartas_abierto  = false;   // true mientras se muestra la pantalla de cartas (el juego esta pausado)
+c_t = 0;                   // 0..1: aparicion de las cartas
+c_sel = -1;                // carta elegida (aun sin confirmar)
+c_hover = -1;              // carta bajo el mouse
+c_conf = 0;                // 0..1: aparicion del boton Confirmar
+c_btn_frame = 0;
+c_bloqueo = 0;             // pasos en los que se ignoran clics y Enter
+c_modo_mouse = true;
+c_mx = 0;
+c_my = 0;
+c_esc = 1;                 // tamano de las cartas en pantalla (se calcula segun la pantalla)
+c_cw = 190;
+c_ch = 288;
+c_gap = 24;
+c_top = 0;
+c_btn_cy = 0;
+
+// Texto pixelado: se dibuja chico en una surface y se amplia sin suavizado (igual que los de la pausa).
+texto_pixel = function(_texto, _fuente) {
+    draw_set_font(_fuente);
+    var _w = ceil(string_width(_texto)) + 8;
+    var _h = ceil(string_height(_texto)) + 8;
+    var _s = surface_create(_w, _h);
+    surface_set_target(_s);
+    draw_clear_alpha(c_black, 0);
+    gpu_set_blendmode_ext_sepalpha(bm_src_alpha, bm_inv_src_alpha, bm_one, bm_inv_src_alpha);
+    draw_set_color(c_white);
+    draw_set_alpha(1);
+    draw_set_halign(fa_center);
+    draw_set_valign(fa_middle);
+    repeat (2) draw_text(floor(_w / 2), floor(_h / 2), _texto);
+    gpu_set_blendmode(bm_normal);
+    surface_reset_target();
+    var _spr = sprite_create_from_surface(_s, 0, 0, _w, _h, false, false, floor(_w / 2), floor(_h / 2));
+    surface_free(_s);
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+    draw_set_font(-1);
+    return _spr;
+};
+var _fc = font_add("Verdana", 14, true, false, 32, 255);
+var _fb = font_add("Verdana", 12, true, false, 32, 255);
+cartas_ui = {
+    titulo:    texto_pixel("¡SUBISTE AL NIVEL", _fc),
+    exclama:   texto_pixel("!", _fc),
+    confirmar: texto_pixel("Confirmar", _fb),
+    m_titulo:  texto_pixel("MEJORAS", _fc),
+    m_nivel:   texto_pixel("Nivel", _fc),
+    m_barra:   texto_pixel("/", _fc),
+    m_vacio:   texto_pixel("Todavía no tienes mejoras", _fb),
+    m_cerrar:  texto_pixel("M o Esc para cerrar", _fb),
+    dig:       []
+};
+for (var _d = 0; _d < 10; _d++) array_push(cartas_ui.dig, texto_pixel(string(_d), _fc));
+font_delete(_fc);
+font_delete(_fb);
+
+// Libera los textos (se llama antes de game_restart para no dejar recursos sueltos)
+cartas_liberar = function() {
+    if (is_undefined(cartas_ui)) return;
+    sprite_delete(cartas_ui.titulo);
+    sprite_delete(cartas_ui.exclama);
+    sprite_delete(cartas_ui.confirmar);
+    sprite_delete(cartas_ui.m_titulo);
+    sprite_delete(cartas_ui.m_nivel);
+    sprite_delete(cartas_ui.m_barra);
+    sprite_delete(cartas_ui.m_vacio);
+    sprite_delete(cartas_ui.m_cerrar);
+    for (var _d = 0; _d < array_length(cartas_ui.dig); _d++) sprite_delete(cartas_ui.dig[_d]);
+    cartas_ui = undefined;
+};
+
+// Cartas que se pueden ofrecer: las que no estan al maximo, mezcladas; se toman hasta cartas_max_opciones
+cartas_elegir_opciones = function() {
+    var _disp = [];
+    for (var _i = 0; _i < array_length(cartas_def); _i++) {
+        var _m = cartas_def[_i].mejora;
+        if (mejoras[$ _m] < mejoras_max[$ _m]) array_push(_disp, _i);
+    }
+    for (var _i = array_length(_disp) - 1; _i > 0; _i--) {
+        var _j = irandom(_i);
+        var _tmp = _disp[_i];
+        _disp[_i] = _disp[_j];
+        _disp[_j] = _tmp;
+    }
+    var _res = [];
+    var _n = min(cartas_max_opciones, array_length(_disp));
+    for (var _i = 0; _i < _n; _i++) array_push(_res, _disp[_i]);
+    return _res;
+};
+
+// Tamano y posicion de las cartas segun el tamano de la pantalla (coordenadas GUI)
+cartas_layout = function() {
+    var _gh = display_get_gui_height();
+    c_esc = max(1, round(_gh * 0.58 / sprite_get_height(s_carta_curacion) * 2) / 2);
+    c_cw  = sprite_get_width(s_carta_curacion) * c_esc;
+    c_ch  = sprite_get_height(s_carta_curacion) * c_esc;
+    c_gap = round(c_cw * 0.12);
+    c_top = round(_gh * 0.47 - c_ch / 2);
+    c_btn_cy = c_top + c_ch + 22 + p_h / 2;
+};
+cartas_rect = function(_i) {
+    var _n = array_length(cartas_opciones);
+    var _tot = _n * c_cw + (_n - 1) * c_gap;
+    return { x: (display_get_gui_width() - _tot) / 2 + _i * (c_cw + c_gap), y: c_top, w: c_cw, h: c_ch };
+};
+
+// Se llama al inicio de cada Step (despues de pausa_actualizar y muerte_actualizar).
+// Abre la pantalla cuando hay niveles sin carta y maneja la eleccion y el boton Confirmar.
+cartas_actualizar = function() {
+    var _fps = game_get_speed(gamespeed_fps);
+
+    if (!cartas_abierto) {
+        if (cartas_pendientes <= 0 || global.pausa || muerto || p_saliendo || mejoras_abierto || alpha_entrada > 0.3) return;
+        var _op = cartas_elegir_opciones();
+        if (array_length(_op) == 0) { cartas_pendientes = 0; return; }   // ya tienes todas las cartas al maximo
+        cartas_opciones = _op;
+        cartas_abierto = true;
+        c_t = 0;
+        c_sel = -1;
+        c_hover = -1;
+        c_conf = 0;
+        c_btn_frame = 0;
+        c_bloqueo = 25;    // por si seguias haciendo clic al atacar
+        c_modo_mouse = true;
+        c_mx = device_mouse_x_to_gui(0);
+        c_my = device_mouse_y_to_gui(0);
+        cartas_layout();
+        if (state == "charge") { state = "idle"; carga = 0; }   // la carga del mago se cancela
+        if (sprite_exists(spr_captura)) sprite_delete(spr_captura);
+        spr_captura = sprite_create_from_surface(application_surface, 0, 0, surface_get_width(application_surface), surface_get_height(application_surface), false, false, 0, 0);
+        instance_deactivate_all(true);   // igual que la pausa: congela todo lo demas
+        show_debug_message("[cartas] nivel " + string(nivel) + ": " + string(array_length(_op)) + " carta(s) para elegir");
+        return;
+    }
+
+    // ---- pantalla abierta ----
+    c_t = min(1, c_t + 1 / (0.4 * _fps));
+    if (c_bloqueo > 0) c_bloqueo -= 1;
+    var _n  = array_length(cartas_opciones);
+    var _gw = display_get_gui_width();
+    var _mx = device_mouse_x_to_gui(0);
+    var _my = device_mouse_y_to_gui(0);
+    if (_mx != c_mx || _my != c_my) c_modo_mouse = true;
+
+    var _bajo = -1;
+    for (var _i = 0; _i < _n; _i++) {
+        var _r = cartas_rect(_i);
+        if (point_in_rectangle(_mx, _my, _r.x, _r.y - 14, _r.x + _r.w, _r.y + _r.h)) _bajo = _i;
+    }
+    var _sobre_conf = (c_sel >= 0 && c_conf > 0.5) && point_in_rectangle(_mx, _my, _gw / 2 - p_w / 2, c_btn_cy - p_h / 2, _gw / 2 + p_w / 2, c_btn_cy + p_h / 2);
+
+    // teclado: izquierda / derecha (A / D) eligen carta, Enter confirma (Espacio no, es el dash)
+    var _der = keyboard_check_pressed(vk_right) || keyboard_check_pressed(ord("D"));
+    var _izq = keyboard_check_pressed(vk_left)  || keyboard_check_pressed(ord("A"));
+    if (_der || _izq) {
+        c_modo_mouse = false;
+        if (c_sel < 0) c_sel = _der ? 0 : _n - 1;
+        else c_sel = (c_sel + (_der ? 1 : -1) + _n) mod _n;
+    }
+    c_hover = c_modo_mouse ? _bajo : -1;
+
+    var _confirmar = false;
+    if (c_bloqueo <= 0) {
+        if (mouse_check_button_pressed(mb_left)) {
+            if (_bajo >= 0) c_sel = _bajo;
+            else if (_sobre_conf) _confirmar = true;
+        }
+        if (keyboard_check_pressed(vk_enter) && c_sel >= 0 && c_conf > 0.5) _confirmar = true;
+    }
+
+    // el boton Confirmar aparece al elegir una carta
+    c_conf = clamp(c_conf + ((c_sel >= 0) ? 0.12 : -0.12), 0, 1);
+    var _meta = (_sobre_conf || (!c_modo_mouse && c_sel >= 0)) ? p_frames - 1 : 0;
+    c_btn_frame += clamp(_meta - c_btn_frame, -p_anim_vel, p_anim_vel);
+
+    if (_confirmar) {
+        var _carta = cartas_def[cartas_opciones[c_sel]];
+        mejora_subir(_carta.mejora);
+        cartas_pendientes -= 1;
+        show_debug_message("[cartas] elegida: " + _carta.nombre + " (nivel " + string(mejoras[$ _carta.mejora]) + ")");
+        cartas_abierto = false;
+        instance_activate_all();
+        if (sprite_exists(spr_captura)) sprite_delete(spr_captura);
+        spr_captura = -1;
+        p_bloqueo = 10;
+        clic_bloqueado = true;   // el clic que confirmo no debe contar como ataque
+        return;
+    }
+    c_mx = _mx;
+    c_my = _my;
+};
+
+// Draw GUI, encima del HUD y debajo de los fundidos: titulo, cartas y boton Confirmar
+cartas_dibujar_ui = function() {
+    if (!cartas_abierto || is_undefined(cartas_ui)) return;
+    var _gw = display_get_gui_width();
+    var _tf = gpu_get_texfilter();
+    gpu_set_texfilter(false);
+    var _dorado = make_colour_rgb(255, 214, 102);
+
+    // titulo: "¡SUBISTE AL NIVEL 5!" armado con el texto y los digitos del nivel
+    var _a = clamp(c_t * 2.5, 0, 1);
+    var _ty = max(46, c_top - 58);
+    var _piezas = [cartas_ui.titulo];
+    var _digs = string(nivel);
+    for (var _i = 1; _i <= string_length(_digs); _i++) array_push(_piezas, cartas_ui.dig[real(string_char_at(_digs, _i))]);
+    array_push(_piezas, cartas_ui.exclama);
+    var _sc = 3;
+    var _esp = 6 * _sc;   // espacio entre el texto y el numero
+    var _tot = _esp;
+    for (var _i = 0; _i < array_length(_piezas); _i++) _tot += (sprite_get_width(_piezas[_i]) - 8) * _sc;
+    for (var _pase = 0; _pase < 2; _pase++) {
+        var _cx = (_gw - _tot) / 2;
+        for (var _i = 0; _i < array_length(_piezas); _i++) {
+            var _w = (sprite_get_width(_piezas[_i]) - 8) * _sc;
+            if (_pase == 0) draw_sprite_ext(_piezas[_i], 0, _cx + _w / 2 + 4, _ty + 4, _sc, _sc, 0, c_black, 0.7 * _a);
+            else            draw_sprite_ext(_piezas[_i], 0, _cx + _w / 2,     _ty,     _sc, _sc, 0, _dorado, _a);
+            _cx += _w + ((_i == 0) ? _esp : 0);
+        }
+    }
+
+    // cartas: entran de abajo una tras otra; la elegida sube y tiene contorno dorado
+    var _n = array_length(cartas_opciones);
+    for (var _i = 0; _i < _n; _i++) {
+        var _r = cartas_rect(_i);
+        var _def = cartas_def[cartas_opciones[_i]];
+        var _e = 1 - power(1 - clamp(c_t * 1.5 - _i * 0.18, 0, 1), 3);
+        var _sel = (_i == c_sel);
+        var _lift = _sel ? -14 : ((_i == c_hover) ? -7 : 0);
+        var _x = _r.x;
+        var _y = _r.y + _lift + (1 - _e) * 70;
+        var _col = (c_sel >= 0 && !_sel) ? make_colour_rgb(140, 140, 150) : c_white;
+        if (_sel) {
+            var _pulso = 0.65 + 0.35 * sin(current_time / 140);
+            gpu_set_fog(true, _dorado, 0, 1);
+            for (var _dx = -1; _dx <= 1; _dx++) {
+                for (var _dy = -1; _dy <= 1; _dy++) {
+                    if (_dx == 0 && _dy == 0) continue;
+                    draw_sprite_ext(_def.spr, 0, _x + _dx * 4, _y + _dy * 4, c_esc, c_esc, 0, c_white, _e * _pulso);
+                }
+            }
+            gpu_set_fog(false, c_white, 0, 1);
+        }
+        draw_sprite_ext(_def.spr, 0, _x, _y, c_esc, c_esc, 0, _col, _e);
+    }
+
+    // boton Confirmar (aparece al elegir una carta)
+    if (c_conf > 0) {
+        var _by = c_btn_cy + (1 - c_conf) * 12;
+        var _f = clamp(floor(c_btn_frame), 0, p_frames - 1);
+        draw_sprite_ext(s_boton_menu, _f, _gw / 2 - p_w / 2, _by - p_h / 2, p_esc, p_esc, 0, c_white, c_conf);
+        var _tt = c_btn_frame / (p_frames - 1);
+        var _tc = merge_colour(make_colour_rgb(70, 38, 8), make_colour_rgb(110, 235, 255), _tt);
+        var _ts = merge_colour(make_colour_rgb(255, 224, 130), make_colour_rgb(4, 18, 28), _tt);
+        draw_sprite_ext(cartas_ui.confirmar, 0, _gw / 2, _by + p_esc, p_esc, p_esc, 0, _ts, c_conf);
+        draw_sprite_ext(cartas_ui.confirmar, 0, _gw / 2, _by,         p_esc, p_esc, 0, _tc, c_conf);
+    }
+
+    gpu_set_texfilter(_tf);
+    draw_set_alpha(1);
+    draw_set_color(c_white);
+};
+
+// ===== Menu de mejoras (tecla M) =====
+// Muestra las cartas (mejoras temporales) que ya conseguiste, con su nivel. Pausa el juego igual que la pausa y las cartas.
+// M, Esc o Enter lo cierran. Solo aparecen las cartas de cartas_def con nivel mayor que 0, asi que al sumar cartas nuevas salen solas.
+mejoras_abierto = false;
+
+// Dibuja varios textos pixelados seguidos y centrados en (_cx, _cy). _esp0 = espacio (en px del texto chico) despues de la primera pieza.
+texto_piezas = function(_piezas, _cx, _cy, _sc, _col, _a, _esp0) {
+    var _tot = _esp0 * _sc;
+    for (var _i = 0; _i < array_length(_piezas); _i++) _tot += (sprite_get_width(_piezas[_i]) - 8) * _sc;
+    for (var _pase = 0; _pase < 2; _pase++) {
+        var _x = _cx - _tot / 2;
+        for (var _i = 0; _i < array_length(_piezas); _i++) {
+            var _w = (sprite_get_width(_piezas[_i]) - 8) * _sc;
+            if (_pase == 0) draw_sprite_ext(_piezas[_i], 0, _x + _w / 2 + _sc, _cy + _sc, _sc, _sc, 0, c_black, 0.7 * _a);
+            else            draw_sprite_ext(_piezas[_i], 0, _x + _w / 2,       _cy,       _sc, _sc, 0, _col,    _a);
+            _x += _w + ((_i == 0) ? _esp0 * _sc : 0);
+        }
+    }
+};
+
+// Se llama al inicio de cada Step (despues de cartas_actualizar): abre y cierra el menu con M
+mejoras_actualizar = function() {
+    if (!mejoras_abierto) {
+        if (!keyboard_check_pressed(ord("M"))) return;
+        if (global.pausa || muerto || cartas_abierto || p_saliendo || p_bloqueo > 0 || alpha_entrada > 0.3) return;
+        mejoras_abierto = true;
+        if (state == "charge") { state = "idle"; carga = 0; }   // la carga del mago se cancela
+        if (sprite_exists(spr_captura)) sprite_delete(spr_captura);
+        spr_captura = sprite_create_from_surface(application_surface, 0, 0, surface_get_width(application_surface), surface_get_height(application_surface), false, false, 0, 0);
+        instance_deactivate_all(true);   // igual que la pausa: congela todo lo demas
+        return;
+    }
+    if (keyboard_check_pressed(ord("M")) || keyboard_check_pressed(vk_escape) || keyboard_check_pressed(vk_enter)) {
+        mejoras_abierto = false;
+        instance_activate_all();
+        if (sprite_exists(spr_captura)) sprite_delete(spr_captura);
+        spr_captura = -1;
+        p_bloqueo = 10;
+        clic_bloqueado = mouse_check_button(mb_left);   // si sigues apretando el clic, no cuenta como ataque
+    }
+};
+
+// Draw GUI, encima del HUD y debajo de los fundidos
+mejoras_dibujar_ui = function() {
+    if (!mejoras_abierto || is_undefined(cartas_ui)) return;
+    var _gw = display_get_gui_width();
+    var _gh = display_get_gui_height();
+    var _tf = gpu_get_texfilter();
+    gpu_set_texfilter(false);
+    var _dorado = make_colour_rgb(255, 214, 102);
+    var _celeste = make_colour_rgb(110, 235, 255);
+
+    // titulo
+    var _ty = _gh * 0.10;
+    draw_sprite_ext(cartas_ui.m_titulo, 0, _gw / 2 + 4, _ty + 4, 4, 4, 0, c_black, 0.7);
+    draw_sprite_ext(cartas_ui.m_titulo, 0, _gw / 2,     _ty,     4, 4, 0, _dorado, 1);
+
+    // cartas conseguidas (en el orden de cartas_def)
+    var _lista = [];
+    for (var _i = 0; _i < array_length(cartas_def); _i++) {
+        if (mejoras[$ cartas_def[_i].mejora] > 0) array_push(_lista, _i);
+    }
+    var _n = array_length(_lista);
+    if (_n == 0) {
+        draw_sprite_ext(cartas_ui.m_vacio, 0, _gw / 2 + 3, _gh / 2 + 3, 3, 3, 0, c_black, 0.7);
+        draw_sprite_ext(cartas_ui.m_vacio, 0, _gw / 2,     _gh / 2,     3, 3, 0, c_white, 1);
+    } else {
+        var _cw0 = sprite_get_width(s_carta_curacion);
+        var _ch0 = sprite_get_height(s_carta_curacion);
+        var _por_fila = min(_n, 6);
+        var _filas = ceil(_n / _por_fila);
+        var _gap = 20;
+        var _lab_h = 44;   // alto reservado para "Nivel x/y" debajo de cada carta
+        var _esc = min(1.5, (_gw * 0.92 - (_por_fila - 1) * _gap) / (_por_fila * _cw0), (_gh * 0.68 - _filas * _lab_h - (_filas - 1) * _gap) / (_filas * _ch0));
+        _esc = max(0.25, floor(_esc * 4) / 4);
+        var _cw = _cw0 * _esc;
+        var _ch = _ch0 * _esc;
+        var _bloque_h = _filas * (_ch + _lab_h) + (_filas - 1) * _gap;
+        var _top = _gh * 0.20 + (_gh * 0.72 - _bloque_h) / 2;
+        for (var _k = 0; _k < _n; _k++) {
+            var _def = cartas_def[_lista[_k]];
+            var _fila = _k div _por_fila;
+            var _col = _k mod _por_fila;
+            var _en_fila = min(_por_fila, _n - _fila * _por_fila);
+            var _x = (_gw - (_en_fila * _cw + (_en_fila - 1) * _gap)) / 2 + _col * (_cw + _gap);
+            var _y = _top + _fila * (_ch + _lab_h + _gap);
+            draw_sprite_ext(_def.spr, 0, _x, _y, _esc, _esc, 0, c_white, 1);
+            // "Nivel 2/3": celeste si ya esta al maximo
+            var _niv = mejoras[$ _def.mejora];
+            var _max = mejoras_max[$ _def.mejora];
+            var _piezas = [cartas_ui.m_nivel, cartas_ui.dig[_niv], cartas_ui.m_barra, cartas_ui.dig[_max]];
+            texto_piezas(_piezas, _x + _cw / 2, _y + _ch + _lab_h / 2, 2, (_niv >= _max) ? _celeste : _dorado, 1, 6);
+        }
+    }
+
+    // ayuda abajo
+    draw_sprite_ext(cartas_ui.m_cerrar, 0, _gw / 2 + 2, _gh - 38 + 2, 2, 2, 0, c_black, 0.7);
+    draw_sprite_ext(cartas_ui.m_cerrar, 0, _gw / 2,     _gh - 38,     2, 2, 0, make_colour_rgb(190, 190, 200), 1);
+
     gpu_set_texfilter(_tf);
     draw_set_alpha(1);
     draw_set_color(c_white);

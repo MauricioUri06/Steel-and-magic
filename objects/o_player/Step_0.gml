@@ -1,7 +1,29 @@
+// Volver al menu tras un reinicio (ver "Volver al menu despues de reiniciar" en Create_0)
+if (ir_menu) {
+    ir_menu = false;
+    alpha_entrada = 1;           // por si se alcanza a dibujar un cuadro: que sea negro
+    persistent = false;          // este jugador no debe seguir vivo en el menu
+    ir_menu_espera = 30;
+    show_debug_message("[reinicio] volviendo al menu desde " + room_get_name(room));
+    room_goto(rm_menu);
+    exit;
+}
+if (ir_menu_espera > 0) {
+    ir_menu_espera -= 1;
+    if (ir_menu_espera > 0) exit;
+    // pasaron 30 pasos y sigue la misma room: el cambio no funciono, se sigue jugando aqui
+    show_debug_message("[reinicio] room_goto no cambio de room (room actual: " + room_get_name(room) + ")");
+    alpha_entrada = 0;
+    persistent = true;
+}
+
 // Fundido de entrada y pausa (Esc): ver Create_0. En pausa el jugador no hace nada mas.
 pausa_actualizar();
 muerte_actualizar();   // P apretada 3 s = morir; si ya moriste maneja el fundido y la pantalla de HAS FALLADO
-if (global.pausa || muerto) exit;
+cartas_actualizar();   // al subir de nivel pausa el juego y muestra las cartas para elegir una
+mejoras_actualizar();  // tecla M: menu con las mejoras (cartas) que ya tienes y su nivel
+if (global.pausa || muerto || cartas_abierto || mejoras_abierto) exit;
+acto_actualizar();   // cartel "ACTO I/II/III" al entrar a cada room de acto
 
 // ===== Cambiar de clase con la rueda del mouse =====
 var _wheel = mouse_wheel_up() - mouse_wheel_down();
@@ -29,6 +51,11 @@ if (debug_mejoras) {                                                   // solo p
     if (keyboard_check_pressed(ord("1"))) mejora_subir("dash_cargas");
     if (keyboard_check_pressed(ord("2"))) mejora_subir("dash_recarga");
     if (keyboard_check_pressed(ord("3"))) mejora_subir("tajos");
+}
+if (debug_cartas) {                                                    // solo para probar
+    if (keyboard_check_pressed(ord("X"))) ganar_xp(5);
+    if (keyboard_check_pressed(ord("K"))) enemigo_derrotado(1);
+    if (keyboard_check_pressed(ord("H"))) recibir_dano(5);
 }
 var _nv = 0;
 for (var _i = 0; _i < array_length(dash_niveles); _i++) {
@@ -85,7 +112,8 @@ if (keyboard_check_pressed(vk_space) && state != "dash" && dash_cargas > 0) {
 // Caballero y soldado: si sigues apretando al terminar la animacion, empieza otro ataque de inmediato.
 // Mago: el clic empieza a cargar la bola de fuego (ver el bloque de abajo).
 mago_recarga_t = max(0, mago_recarga_t - 1);
-if (state != "attack" && state != "dash" && state != "charge" && mouse_check_button(mb_left) && !(clase == "mago" && mago_recarga_t > 0)) {
+if (clic_bloqueado && !mouse_check_button(mb_left)) clic_bloqueado = false;   // tras confirmar una carta, espera a soltar el clic
+if (state != "attack" && state != "dash" && state != "charge" && mouse_check_button(mb_left) && !clic_bloqueado && !(clase == "mago" && mago_recarga_t > 0)) {
     var _ang = point_direction(x, y, mouse_x, mouse_y);
     if (_ang >= 315 || _ang < 45)  facing = "derecha";
     else if (_ang < 135)           facing = "arriba";
@@ -112,6 +140,12 @@ if (state != "attack" && state != "dash" && state != "charge" && mouse_check_but
             var _natural = atk_timer;
             atk_timer = max(1, round(game_get_speed(gamespeed_fps) / proy[$ clase].cadencia));
             atk_img_speed = _natural / atk_timer;
+        }
+        // carta "Velocidad de ataque": el ataque dura menos y la animacion va mas rapido
+        var _vel = vel_ataque_mult();
+        if (_vel > 1) {
+            atk_timer = max(1, round(atk_timer / _vel));
+            atk_img_speed *= _vel;
         }
     }
 }
@@ -149,7 +183,7 @@ if (state == "charge") {
         atk_img_speed = 1;
         atk_timer = max(1, ceil((sprite_get_number(_as) - mago_cfg.frame_lanzar) / max(_spd, 0.01)));
         carga = 0;
-        mago_recarga_t = round(mago_cfg.recarga * _fps);   // espera antes de poder cargar otra bola
+        mago_recarga_t = round(mago_cfg.recarga * _fps / vel_ataque_mult());   // espera antes de poder cargar otra bola
     }
 }
 

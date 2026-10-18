@@ -1,3 +1,4 @@
+gpu_set_texfilter(false);   // pixel art nitido, aunque el juego arranque directo en un acto (el menu es quien lo apaga normalmente)
 // Espejismos del dash (detras del jugador): se van desvaneciendo
 for (var _i = 0; _i < array_length(espejismos); _i++) {
     var _e = espejismos[_i];

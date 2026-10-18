@@ -19,10 +19,13 @@ fade_saliendo = false;
 fade_vel = 0.05;          // cuanto sube el negro por paso al salir de la pantalla
 accion_pendiente = "";
 cambiando = false;        // true cuando ya se pidio el cambio de room
-// si se llega desde la pantalla de muerte (boton Mejoras), el menu abre directo en esa pantalla
-if (variable_global_exists("menu_inicio")) {
-    if (global.menu_inicio == "mejoras") { pantalla = "mejoras"; bloqueo = 15; }
-    global.menu_inicio = "";
+// si se llega tras reiniciar desde la pausa o la pantalla de muerte, arranque.ini puede pedir abrir directo la pantalla Mejoras
+if (file_exists("arranque.ini")) {
+    ini_open("arranque.ini");
+    var _pant = ini_read_string("arranque", "pantalla", "principal");
+    ini_close();
+    file_delete("arranque.ini");
+    if (_pant == "mejoras") { pantalla = "mejoras"; bloqueo = 15; }
 }
 
 // --- fondo con parallax ---
