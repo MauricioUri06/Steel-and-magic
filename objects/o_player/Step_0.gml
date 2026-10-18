@@ -29,6 +29,9 @@ else musica_volumen((global.pausa || cartas_abierto || mejoras_abierto) ? 0.3 : 
 if (carga_snd != -1 && (state != "charge" || global.pausa || muerto || cartas_abierto || mejoras_abierto)) carga_sonido_detener();
 if (global.pausa || muerto || cartas_abierto || mejoras_abierto) exit;
 acto_actualizar();   // cartel "ACTO I/II/III" al entrar a cada room de acto
+var _dt_run = 1 / game_get_speed(gamespeed_fps);
+tiempo_run += _dt_run;
+uso_clases[clase_idx] += _dt_run;
 
 // ===== Cambiar de clase con las teclas 1 (Caballero), 2 (Mago) y 3 (Soldado) =====
 var _nueva = -1;

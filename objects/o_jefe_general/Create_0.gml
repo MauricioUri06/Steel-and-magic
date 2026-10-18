@@ -209,6 +209,11 @@ muerte_final_captura = -1;
 muerte_final_congelado = false;
 muerte_final_jugador = noone;
 muerte_final_nivel = 1;
+muerte_final_tiempo = 0;
+muerte_final_enemigos = 0;
+muerte_final_monedas = 0;
+muerte_final_clase = 0;
+muerte_final_nuevo_record = false;
 muerte_final_pose = spr_general_caminar;
 muerte_final_frame = 0;
 muerte_final_camara_x = 0;
@@ -220,10 +225,37 @@ morir_normal = morir;
 morir = function() {
     if (!es_enemigo) return;
     muerte_final_jugador = instance_find(o_player, 0);
-    if (instance_exists(muerte_final_jugador)) muerte_final_nivel = muerte_final_jugador.nivel;
     muerte_final_pose = buscar_sprite();
     muerte_final_frame = floor(anim) mod sprite_get_number(muerte_final_pose);
     morir_normal();   // conserva las monedas, la baja y los orbes; solo se paga una vez
+
+    // Copiar y guardar los datos mientras el jugador sigue activo. En el Draw GUI
+    // siguiente se desactiva todo el mundo para la cinematica final.
+    if (instance_exists(muerte_final_jugador)) {
+        muerte_final_nivel = muerte_final_jugador.nivel;
+        muerte_final_tiempo = muerte_final_jugador.tiempo_run;
+        muerte_final_enemigos = muerte_final_jugador.enemigos_derrotados;
+        muerte_final_monedas = muerte_final_jugador.monedas;
+
+        var _mayor_uso = muerte_final_jugador.uso_clases[0];
+        for (var _ci = 1; _ci < 3; _ci++) {
+            if (muerte_final_jugador.uso_clases[_ci] > _mayor_uso) {
+                _mayor_uso = muerte_final_jugador.uso_clases[_ci];
+                muerte_final_clase = _ci;
+            }
+        }
+
+        if (!muerte_final_jugador.victoria_registrada) {
+            muerte_final_nuevo_record = meta_registrar_victoria(
+                muerte_final_tiempo,
+                muerte_final_enemigos,
+                muerte_final_monedas,
+                muerte_final_nivel,
+                muerte_final_clase
+            );
+            muerte_final_jugador.victoria_registrada = true;
+        }
+    }
     hp = 0;
     depth = -10001;
 

@@ -14,9 +14,8 @@ compra_realizada = false;
 fila_hover = -1;
 boton_salida_hover = false;
 
-// Controles temporales para probar sin tocar o_player:
-// N = sumar 100 monedas permanentes, M = simular muerte con 25 monedas de run.
-debug_meta = true;
+// Controles de prueba desactivados: no deben alterar el progreso real.
+debug_meta = false;
 
 cerrar_menu = function() {
     if (mundo_pausado) {

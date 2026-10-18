@@ -11,7 +11,13 @@ if (muerte_final_t >= muerte_final_fin) {
     muerte_final_congelado = false;
     instance_create_depth(0, 0, -12000, o_victoria, {
         jugador: muerte_final_jugador,
-        nivel_final: muerte_final_nivel
+        nivel_final: muerte_final_nivel,
+        tiempo_final: muerte_final_tiempo,
+        enemigos_final: muerte_final_enemigos,
+        monedas_final: muerte_final_monedas,
+        clase_final: muerte_final_clase,
+        nuevo_record: muerte_final_nuevo_record,
+        record_ya_guardado: true
     });
     instance_destroy();
 }
