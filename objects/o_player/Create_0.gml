@@ -20,6 +20,9 @@ clases        = ["cab", "mago", "sol"];
 nombres_clase = ["Caballero", "Mago", "Soldado"];
 clase_idx     = 0;                    // empieza con caballero
 clase         = clases[clase_idx];
+tiempo_run    = 0;                    // solo avanza durante juego activo
+uso_clases    = [0, 0, 0];            // tiempo de uso de cada arma/clase
+victoria_registrada = false;          // evita duplicar el record si dos sistemas disparan la victoria
 
 // ===== Estado =====
 state  = "idle";      // "idle" | "walk" | "attack"
@@ -514,6 +517,11 @@ morir = function() {
     if (muerto) return;
     muerto = true;
     hp = 0;
+
+    // El oro conseguido al derrotar enemigos pertenece a esta partida.
+    // Al morir pasa al banco permanente antes de que game_restart reinicie todo.
+    meta_cobrar_monedas_run(monedas);
+
     alpha_muerte = 0;
     m_ui_t = 0;
     m_bloqueo = 40;

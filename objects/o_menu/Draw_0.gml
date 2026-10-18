@@ -43,6 +43,39 @@ if (pantalla == "principal") {
         var _cy = boton_y0 + _j * (boton_h + boton_sep) + boton_h / 2;
         dibujar_boton(room_width / 2, _cy, _bt.frame, _bt.spr_texto);
     }
+
+    // Resumen compacto del mejor final conseguido. Se mantiene en una esquina
+    // para no competir con el titulo ni con los botones del menu.
+    var _record = global.meta_progreso.record;
+    if (_record.tiene_record) {
+        var _ru = min(room_width / 1280, room_height / 720);
+        var _rx = room_width - 350 * _ru;
+        var _ry = room_height - 180 * _ru;
+        draw_sprite_ext(spr_record_corner_panel, 0, _rx, _ry, _ru, _ru, 0, c_white, 1);
+
+        draw_set_font(fuente_pix);
+        draw_set_valign(fa_middle);
+        draw_set_halign(fa_center);
+        draw_set_color(col_oro);
+        draw_text_transformed(_rx + 170 * _ru, _ry + 25 * _ru, "RÉCORD PERSONAL", 1.0 * _ru, 1.0 * _ru, 0);
+
+        var _ri = [ico_record_time, ico_record_victories, meta_sprite_clase(_record.clase)];
+        var _rl = ["MEJOR TIEMPO", "VICTORIAS", "ARMA DEL RÉCORD"];
+        var _rv = [meta_formatear_tiempo(_record.mejor_tiempo), string(_record.victorias), meta_nombre_clase(_record.clase)];
+        for (var _rf = 0; _rf < 3; _rf++) {
+            var _rry = _ry + (65 + _rf * 40) * _ru;
+            var _iesc = (_rf == 2) ? 0.50 * _ru : 0.66 * _ru;
+            draw_sprite_ext(_ri[_rf], 0, _rx + 12 * _ru, _rry - 16 * _ru, _iesc, _iesc, 0, c_white, 1);
+            draw_set_halign(fa_left);
+            draw_set_color(col_texto);
+            draw_text_transformed(_rx + 62 * _ru, _rry, _rl[_rf], 0.75 * _ru, 0.75 * _ru, 0);
+            draw_set_halign(fa_right);
+            draw_set_color(col_cian);
+            draw_text_transformed(_rx + 322 * _ru, _rry, _rv[_rf], 0.82 * _ru, 0.82 * _ru, 0);
+        }
+        draw_set_halign(fa_left);
+        draw_set_valign(fa_top);
+    }
 }
 else if (pantalla == "tutorial") {
     dibujar_panel("Tutorial");

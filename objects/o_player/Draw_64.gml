@@ -65,8 +65,10 @@ for (var _sep = 0; _sep < 3; _sep++) {
     draw_line_width(_dx, _y + 28 * _u, _dx, _gh - 13 * _u, _u);
 }
 
-// Barras y valores: vida arriba, experiencia debajo.
-var _bx = _x + 234 * _u, _bw = 500 * _u;
+// Barras y valores: vida arriba, experiencia debajo. El dash ocupa su propio modulo.
+var _bx = _x + 234 * _u, _bw = 390 * _u;
+var _dash_x = _x + 638 * _u, _dash_y = _y + 25 * _u;
+var _dash_w = 96 * _u, _dash_h = 54 * _u;
 draw_set_color(make_colour_rgb(34, 49, 58));
 draw_rectangle(_bx, _y + 27 * _u, _bx + _bw, _y + 49 * _u, false);
 draw_set_color((_vida <= 0.25) ? make_colour_rgb(195, 62, 68) : make_colour_rgb(47, 137, 101));
@@ -75,6 +77,15 @@ draw_set_color(make_colour_rgb(25, 42, 55));
 draw_rectangle(_bx, _y + 61 * _u, _bx + _bw, _y + 75 * _u, false);
 draw_set_color(make_colour_rgb(42, 112, 149));
 if (_xp > 0) draw_rectangle(_bx, _y + 61 * _u, _bx + _bw * _xp, _y + 75 * _u, false);
+
+// Compartimento de cargas de dash integrado al metal del HUD.
+draw_set_color(make_colour_rgb(5, 13, 21));
+draw_rectangle(_dash_x, _dash_y, _dash_x + _dash_w, _dash_y + _dash_h, false);
+draw_set_color(make_colour_rgb(42, 58, 68));
+draw_rectangle(_dash_x, _dash_y, _dash_x + _dash_w, _dash_y + _dash_h, true);
+draw_set_color(make_colour_rgb(82, 105, 115));
+draw_line(_dash_x + _u, _dash_y + _u, _dash_x + _dash_w - _u, _dash_y + _u);
+
 var _hp_texto = "VIDA  " + string(ceil(max(0, hp))) + " / " + string(hp_max);
 var _xp_texto = _max_nivel ? "XP  MAX" : "XP  " + string(xp) + " / " + string(xp_sig);
 draw_set_halign(fa_center);
@@ -82,11 +93,47 @@ draw_set_valign(fa_middle);
 draw_set_color(c_black);
 draw_text_transformed(_bx + _bw / 2, _y + 40 * _u, _hp_texto, _u, _u, 0);
 draw_text_transformed(_bx + _bw / 2, _y + 70 * _u, _xp_texto, 0.85 * _u, 0.85 * _u, 0);
+draw_text_transformed(_dash_x + _dash_w / 2, _dash_y + 14 * _u, "DASH", 0.68 * _u, 0.68 * _u, 0);
 draw_set_color(c_white);
 draw_text_transformed(_bx + _bw / 2, _y + 38 * _u, _hp_texto, _u, _u, 0);
 draw_text_transformed(_bx + _bw / 2, _y + 68 * _u, _xp_texto, 0.85 * _u, 0.85 * _u, 0);
+draw_set_color(_cian);
+draw_text_transformed(_dash_x + _dash_w / 2, _dash_y + 12 * _u, "DASH", 0.68 * _u, 0.68 * _u, 0);
+
+// Rombos llenos = cargas disponibles; rombos oscuros = cargas gastadas.
+var _dash_total = max(1, dash_cargas_max);
+var _dash_sep = 17 * _u;
+var _dash_inicio = _dash_x + _dash_w / 2 - (_dash_total - 1) * _dash_sep / 2;
+for (var _dc = 0; _dc < _dash_total; _dc++) {
+    var _cx = _dash_inicio + _dc * _dash_sep;
+    var _cy = _dash_y + 36 * _u;
+    var _dr = 5 * _u;
+    var _lleno = _dc < dash_cargas;
+
+    draw_set_color(_lleno ? _cian : make_colour_rgb(20, 53, 64));
+    draw_primitive_begin(pr_trianglefan);
+    draw_vertex(_cx,       _cy - _dr);
+    draw_vertex(_cx + _dr, _cy);
+    draw_vertex(_cx,       _cy + _dr);
+    draw_vertex(_cx - _dr, _cy);
+    draw_vertex(_cx,       _cy - _dr);
+    draw_primitive_end();
+
+    draw_set_color(_lleno ? c_white : make_colour_rgb(52, 115, 128));
+    draw_line(_cx, _cy - _dr, _cx + _dr, _cy);
+    draw_line(_cx + _dr, _cy, _cx, _cy + _dr);
+    draw_line(_cx, _cy + _dr, _cx - _dr, _cy);
+    draw_line(_cx - _dr, _cy, _cx, _cy - _dr);
+}
 
 // Oro de esta partida: el mismo contador al que entregan monedas los enemigos.
+// Nombre del arma/clase activa; cambia junto con la rueda del mouse.
+var _nombre_arma = string_upper(nombres_clase[clase_idx]);
+draw_set_color(c_black);
+draw_text_transformed(_x + 875 * _u, _y + 19 * _u, _nombre_arma, 0.80 * _u, 0.80 * _u, 0);
+draw_set_color(_cian);
+draw_text_transformed(_x + 875 * _u, _y + 17 * _u, _nombre_arma, 0.80 * _u, 0.80 * _u, 0);
+
 draw_set_color(_texto);
 draw_text_transformed(_x + 54 * _u, _y + 35 * _u, "NIVEL", 0.85 * _u, 0.85 * _u, 0);
 draw_text_transformed(_x + 817 * _u, _y + 35 * _u, "DAÑO", 0.85 * _u, 0.85 * _u, 0);
