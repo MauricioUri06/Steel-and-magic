@@ -4,6 +4,9 @@
 global.pausa = false;       // por si se vuelve aqui desde la pausa de un nivel
 pantalla = "principal";
 room_inicio = rm_acto_1_ruinas;   // room a la que va el boton Empezar
+meta_inicializar();
+meta_fila_hover = -1;
+meta_volver_hover = false;
 
 // --- estado ---
 sel = -1;                 // boton seleccionado (-1 = ninguno)
@@ -69,7 +72,7 @@ menu_accion = function(_a) {
         case "empezar":  fade_saliendo = true; accion_pendiente = "empezar"; fade_vel = 1 / (2   * game_get_speed(gamespeed_fps)); break;   // 2 s hasta negro
         case "salir":    fade_saliendo = true; accion_pendiente = "salir";   fade_vel = 1 / (0.5 * game_get_speed(gamespeed_fps)); break;
         case "tutorial": pantalla = "tutorial"; bloqueo = 15; break;
-        case "mejoras":  pantalla = "mejoras";  bloqueo = 15; break;
+        case "mejoras":  pantalla = "mejoras"; bloqueo = 15; break;
     }
 };
 

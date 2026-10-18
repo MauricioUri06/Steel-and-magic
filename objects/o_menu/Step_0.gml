@@ -51,12 +51,40 @@ if (!fade_saliendo) {
         if (_clic) sel = _bajo;
         if (sel >= 0 && (_clic || _enter)) menu_accion(botones[sel].accion);
         _resaltado = sel;
-    } else {
-        // Tutorial / Mejoras: boton Volver, Esc, Backspace o Enter
+    } else if (pantalla == "tutorial") {
+        // Tutorial: boton Volver, Esc, Backspace o Enter
         volver_hover = point_in_rectangle(_mx, _my, room_width / 2 - boton_w / 2, volver_cy - boton_h / 2, room_width / 2 + boton_w / 2, volver_cy + boton_h / 2);
         var _volver = (bloqueo <= 0) && ((volver_hover && mouse_check_button_pressed(mb_left))
                       || keyboard_check_pressed(vk_escape) || keyboard_check_pressed(vk_backspace) || keyboard_check_pressed(vk_enter));
         if (_volver) { pantalla = "principal"; bloqueo = 15; }
+    } else if (pantalla == "mejoras") {
+        // Mejoras permanentes: entrada directa, sin crear ni pausar instancias.
+        var _mu = min(room_width / 1280, room_height / 720);
+        var _mpx = (room_width - 960 * _mu) * 0.5;
+        var _mpy = (room_height - 480 * _mu) * 0.5;
+        var _mfx = _mpx + 110 * _mu;
+        var _mfy = _mpy + 88 * _mu;
+
+        meta_fila_hover = -1;
+        for (var _mi = 0; _mi < array_length(global.meta_progreso.mejoras); _mi++) {
+            var _mby = _mfy + _mi * 40 * _mu + 4 * _mu;
+            var _mbx = _mfx + 625 * _mu;
+            if (point_in_rectangle(_mx, _my, _mbx, _mby, _mbx + 102 * _mu, _mby + 32 * _mu)) meta_fila_hover = _mi;
+        }
+
+        var _mvx = room_width * 0.5 - 116 * _mu;
+        var _mvy = _mpy + 432 * _mu;
+        meta_volver_hover = point_in_rectangle(_mx, _my, _mvx, _mvy, _mvx + 232 * _mu, _mvy + 36 * _mu);
+        volver_hover = meta_volver_hover;
+
+        if (bloqueo <= 0 && mouse_check_button_pressed(mb_left)) {
+            if (meta_fila_hover >= 0) meta_comprar_mejora(meta_fila_hover);
+            else if (meta_volver_hover) { pantalla = "principal"; bloqueo = 15; }
+        }
+        if (keyboard_check_pressed(vk_escape) || keyboard_check_pressed(vk_backspace)) {
+            pantalla = "principal";
+            bloqueo = 15;
+        }
     }
 }
 

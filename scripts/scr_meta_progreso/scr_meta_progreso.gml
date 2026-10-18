@@ -15,7 +15,7 @@ function meta_inicializar() {
             { id:"velocidad", nombre:"VELOCIDAD", efecto:"+2%", max_nivel:5, nivel:0, costo_base:35, crecimiento:1.70, icon_x:208, icon_y:576 },
             { id:"dano", nombre:"ATAQUE", efecto:"+3%", max_nivel:5, nivel:0, costo_base:45, crecimiento:1.75, icon_x:320, icon_y:576 },
             { id:"dash", nombre:"DASH", efecto:"DISTANCIA Y RECARGA", max_nivel:5, nivel:0, costo_base:60, crecimiento:1.80, icon_x:432, icon_y:576 },
-            { id:"radio_monedas", nombre:"RADIO DE MONEDAS", efecto:"+10%", max_nivel:3, nivel:0, costo_base:40, crecimiento:1.90, icon_x:544, icon_y:576 },
+            { id:"radio_monedas", nombre:"RADIO DE EXPERIENCIA", efecto:"+10%", max_nivel:3, nivel:0, costo_base:40, crecimiento:1.90, icon_x:544, icon_y:576 },
             { id:"bonus_monedas", nombre:"MONEDAS GANADAS", efecto:"+5%", max_nivel:5, nivel:0, costo_base:55, crecimiento:1.90, icon_x:656, icon_y:576 },
             { id:"reroll", nombre:"REROLL DE CARTAS", efecto:"+1 POR PARTIDA", max_nivel:3, nivel:0, costo_base:90, crecimiento:2.10, icon_x:768, icon_y:576 },
             { id:"cuarta_opcion", nombre:"CUARTA CARTA", efecto:"DESBLOQUEO ESPECIAL", max_nivel:1, nivel:0, costo_base:300, crecimiento:1.00, icon_x:880, icon_y:576 }
