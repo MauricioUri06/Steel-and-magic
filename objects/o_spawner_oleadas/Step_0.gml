@@ -27,6 +27,7 @@ if (jefe_actual != noone && (!instance_exists(jefe_actual) || !jefe_actual.es_en
     jefe_actual = noone;
     if (jefe_sala != -1) {
         sfx_jingle(sfx_jefe);   // fanfarria de jefe vencido (el jefe final no: ese activa la victoria de mas abajo)
+        if (instance_exists(o_player)) { o_player.inmune_acto = true; o_player.inmune = true; }   // invulnerable hasta que empiece el siguiente acto (se apaga en lanzar_oleada)
         sala_destino = jefe_sala;
         jefe_sala = -1;
         trans_t = 0;
@@ -53,6 +54,7 @@ var _jefe = jefe_vivo();
 if (oleada >= total_oleadas) {
     if (array_length(cola) == 0 && !_jefe && !instance_exists(o_jefe_general)) {
         victoria = true;
+        if (instance_exists(o_player)) { o_player.inmune_acto = true; o_player.inmune = true; }   // jefe final vencido: nada le hace dano en la pantalla de victoria
         instance_create_depth(0, 0, -12000, o_victoria);   // la fanfarria sfx_victoria suena en o_victoria
     }
     exit;

@@ -119,6 +119,7 @@ dash_golpeados = {};                       // enemigos ya golpeados en este dash
 inmune       = false;                      // true mientras dura el dash y un instante despues (usalo cuando los enemigos hagan dano)
 dash_gracia  = 6;                          // pasos extra de invulnerabilidad al terminar el dash (60 = 1 s; 0 = solo mientras te desplazas)
 inmune_gracia = 0;                         // cuenta regresiva de esos pasos extra
+inmune_acto   = false;                     // true desde que cae un jefe hasta que empieza la primera oleada del acto siguiente (o_spawner_oleadas); mantiene inmune = true
 
 // Espejismos: copias del jugador que se quedan atras y se desvanecen
 espejismos      = [];                      // cada uno: {x, y, spr, img, esc, vida}
@@ -928,7 +929,8 @@ if (file_exists("arranque.ini")) {
 // - Para sumar una carta nueva: agregarla a cartas_def (sprite + id de mejora), a mejoras / mejoras_max (mas arriba) y darle su efecto.
 // - Para que los enemigos le hagan dano al jugador:   o_player.recibir_dano(cantidad);   (la armadura lo reduce y el dash lo evita)
 nivel        = 1;
-nivel_max    = 12;       // al llegar aqui ya no se sube mas (la experiencia deja de sumar)
+nivel_max    = 16;       // al llegar aqui ya no se sube mas (la experiencia deja de sumar). Se empieza en el nivel 1, asi que 16 = 15 subidas = 15 cartas
+cartas_tope  = 15;       // maximo de mejoras temporales (cartas) que se pueden tener en total, contando los niveles de cada carta
 xp           = 0;
 xp_base      = 10;       // experiencia para pasar del nivel 1 al 2
 xp_crece     = 1.28;     // (antes 1.25: se subio un poco para que cueste algo mas subir de nivel) cada nivel pide este numero de veces mas que el anterior (sube este numero para hacerlo mas dificil)
@@ -1275,8 +1277,16 @@ cartas_liberar = function() {
 
 // Cartas que se pueden ofrecer: las que no estan al maximo y cuyo requisito ya se cumple. Se sortean hasta cartas_max_opciones
 // distintas, y las comunes salen mas seguido que las raras y las epicas (cartas_peso_rareza).
+cartas_total = function() {
+    var _t = 0;
+    var _ks = variable_struct_get_names(mejoras);
+    for (var _i = 0; _i < array_length(_ks); _i++) _t += mejoras[$ _ks[_i]];
+    return _t;
+};
+
 cartas_elegir_opciones = function() {
     var _disp = [];
+    if (cartas_total() >= cartas_tope) return [];   // ya tienes el maximo de mejoras temporales
     for (var _i = 0; _i < array_length(cartas_def); _i++) {
         var _c = cartas_def[_i];
         if (mejoras[$ _c.mejora] >= mejoras_max[$ _c.mejora]) continue;

@@ -89,8 +89,9 @@ if (state == "attack") {
 // ===== Invulnerabilidad: dura todo el dash y unos pasos mas (dash_gracia) =====
 if (inmune && state != "dash") {
     inmune_gracia -= 1;
-    if (inmune_gracia <= 0) inmune = false;
+    if (inmune_gracia <= 0 && !inmune_acto) inmune = false;
 }
+if (inmune_acto) inmune = true;   // jefe vencido: invulnerable hasta que empiece el siguiente acto
 
 // ===== Dash: barra espaciadora =====
 // Va hacia donde te mueves; si estas quieto, hacia el cursor. Cancela el ataque en curso.
@@ -220,7 +221,7 @@ if (state == "dash") {
     dash_timer -= 1;
     if (dash_timer <= 0) {
         inmune_gracia = dash_gracia;   // sigues invulnerable unos pasos mas (ver dash_gracia); se apaga abajo
-        if (inmune_gracia <= 0) inmune = false;
+        if (inmune_gracia <= 0 && !inmune_acto) inmune = false;
         state = (_len > 0) ? "walk" : "idle";
     }
 } else if (_len > 0) {

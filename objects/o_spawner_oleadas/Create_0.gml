@@ -71,6 +71,7 @@ armar_oleada = function(_n) {
 
 lanzar_oleada = function() {
     oleada += 1;
+    if (instance_exists(o_player) && o_player.inmune_acto) { o_player.inmune_acto = false; o_player.inmune_gracia = 60; }   // empieza el acto: 1 s mas de gracia y se acaba la invulnerabilidad
     cola = armar_oleada(oleada);
     timer_cola = 0;
     timer = intervalo;
