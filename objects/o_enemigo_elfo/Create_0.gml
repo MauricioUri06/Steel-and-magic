@@ -15,4 +15,13 @@ rafaga       = 3;
 rafaga_pausa = 6;
 proy_vel     = 7;
 proy_dano    = 2;
-proy_color   = c_fuchsia;
+proy_color   = c_aqua;   // el rifle del sprite dispara energia cian
+
+spr_por_estado = {
+    perseguir: spr_elfo_caminar,
+    apuntar:   spr_elfo_apuntar,
+    disparar:  spr_elfo_disparo,
+    recuperar: spr_elfo_recuperar,
+    cayendo:   spr_elfo_caida,
+    muerto:    spr_elfo_muerto
+};

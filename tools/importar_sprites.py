@@ -4,12 +4,16 @@ en sprites de GameMaker con celdas de tamano fijo, y los registra en el proyecto
 Uso (desde la raiz del repo, requiere pillow):
     python tools/importar_sprites.py HOJA CELDA PREFIJO NOMBRE=FRAMES [NOMBRE=FRAMES ...]
 
-    python tools/importar_sprites.py art/enemies/orco/orco_sheet.webp 48 spr_orco \
+    python tools/importar_sprites.py art/enemies/orco/orco_sheet.png 48 spr_orco \
         caminar=0-3 aviso=4-5 embestida=6 recuperar=7 caida=8 muerto=9
 
+    # hoja que ya es pixel art en celdas exactas de 32x32: se corta tal cual
+    python tools/importar_sprites.py art/enemies/elite_misiles/elite_misiles_sheet.png 32 spr_elite --grilla \
+        caminar=0-3 apuntar=4-5 disparo=6 recuperar=7 caida=8 muerto=9
+
 Los fotogramas se numeran de izquierda a derecha y de arriba a abajo, empezando en 0.
-Todos se reducen con el MISMO factor (el mayor fotograma entra en la celda), con los pies en la misma
-linea y centrados en horizontal. El origen queda en el centro de la celda. Volver a correrlo
+Hoja de IA: todos se reducen con el MISMO factor (el mayor fotograma entra en la celda), con los pies
+en la misma linea y centrados en horizontal. El origen queda en el centro de la celda. Volver a correrlo
 reemplaza los PNG pero conserva los ids del .yy, asi GameMaker no ve recursos nuevos.
 """
 import os, re, sys, uuid, json
@@ -108,22 +112,38 @@ def yy_sprite(nombre, frames, layer, celda, kf_ids):
     return t
 
 
-def main():
-    hoja, celda, prefijo, specs = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4:]
-    im = Image.open(hoja).convert('RGBA')
+def celdas_grilla(im, celda):
+    """Hoja que ya es pixel art en celdas exactas (ej. 128x96 con celdas de 32): se corta tal cual, sin reducir.
+    Las celdas vacias se saltan."""
+    out = []
+    for y in range(0, im.height, celda):
+        for x in range(0, im.width, celda):
+            c = im.crop((x, y, x + celda, y + celda))
+            if c.getbbox(): out.append(c)
+    return out
+
+
+def celdas_ia(im, celda):
+    """Hoja generada por IA (grande, sin grilla exacta): se reduce y se alinea."""
     bs = cajas(im)
-    print(len(bs), 'fotogramas encontrados')
     factor = max(max(b[2] - b[0], b[3] - b[1]) for b in bs) / (celda - 2 * MARGEN)
     pal = paleta(im)
-    chicos = [reducir(im.crop(b), factor, pal) for b in bs]
-
-    celdas = []
-    for c in chicos:
+    out = []
+    for b in bs:
+        c = reducir(im.crop(b), factor, pal)
+        c = c.crop(c.getbbox())
         cell = Image.new('RGBA', (celda, celda))
-        bb = c.getbbox()
-        c = c.crop(bb)
         cell.paste(c, ((celda - c.width) // 2, celda - MARGEN - c.height))   # pies en la misma fila
-        celdas.append(cell)
+        out.append(cell)
+    return out
+
+
+def main():
+    args = [a for a in sys.argv[1:] if a != '--grilla']
+    hoja, celda, prefijo, specs = args[0], int(args[1]), args[2], args[3:]
+    im = Image.open(hoja).convert('RGBA')
+    celdas = celdas_grilla(im, celda) if '--grilla' in sys.argv else celdas_ia(im, celda)
+    print(len(celdas), 'fotogramas encontrados')
 
     # vista previa ampliada de todos los fotogramas
     prev = Image.new('RGBA', (celda * len(celdas), celda), (40, 40, 48, 255))

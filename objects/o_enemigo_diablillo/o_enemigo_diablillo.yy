@@ -12,8 +12,8 @@
     "path":"folders/objects/enemies.yy",
   },
   "parentObjectId":{
-    "name":"o_enemigo_melee",
-    "path":"objects/o_enemigo_melee/o_enemigo_melee.yy",
+    "name":"o_enemigo_rango",
+    "path":"objects/o_enemigo_rango/o_enemigo_rango.yy",
   },
   "persistent":false,
   "physicsAngularDamping":0.1,

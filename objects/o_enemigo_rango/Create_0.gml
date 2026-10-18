@@ -1,5 +1,5 @@
 // ===== Enemigo a distancia (padre del elfo oscuro y del elite con lanzamisiles) =====
-// Estados: perseguir (mantiene la distancia) -> apuntar (linea de aviso) -> disparar (rafaga) -> perseguir
+// Estados: perseguir (mantiene la distancia) -> apuntar (sprite de apuntar) -> disparar (rafaga) -> recuperar -> perseguir
 event_inherited();
 
 dist_ideal   = 170;       // se acerca hasta esta distancia
@@ -11,6 +11,7 @@ cd           = irandom(cd_disparo);   // aleatorio para que no disparen todos a 
 rafaga       = 1;         // disparos por rafaga
 rafaga_pausa = 8;         // pasos entre disparos de la rafaga
 disparos_restantes = 0;
+recuperacion = 15;        // pasos quieto despues de la rafaga
 dir_apunta   = 0;
 
 proy_obj   = o_proyectil_enemigo;
@@ -59,22 +60,16 @@ comportamiento = function() {
                     disparos_restantes -= 1;
                     timer = rafaga_pausa;
                 } else {
-                    estado = "perseguir";
-                    cd = cd_disparo;
+                    estado = "recuperar";
+                    timer  = recuperacion;
+                    cd     = cd_disparo;
                 }
             }
             break;
-    }
-};
 
-dibujar_extra = function() {
-    if (estado == "apuntar") {
-        // linea de mira; parpadea cuando ya quedo fija
-        if (timer > aviso_fijo || (timer div 3) mod 2 == 0) {
-            draw_set_alpha(timer > aviso_fijo ? 0.35 : 0.9);
-            draw_set_color(proy_color);
-            draw_line(x, y, x + lengthdir_x(320, dir_apunta), y + lengthdir_y(320, dir_apunta));
-            draw_set_alpha(1);
-        }
+        case "recuperar":   // pausa corta despues de disparar (baja el arma)
+            timer -= 1;
+            if (timer <= 0) estado = "perseguir";
+            break;
     }
 };

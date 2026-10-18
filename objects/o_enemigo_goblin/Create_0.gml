@@ -10,3 +10,12 @@ dano         = 2;
 rango_ataque = 26;
 area_radio   = 16;
 aviso        = 20;
+
+spr_por_estado = {
+    perseguir: spr_goblin_caminar,
+    aviso:     spr_goblin_aviso,
+    atacar:    spr_goblin_ataque,
+    recuperar: spr_goblin_recuperar,
+    cayendo:   spr_goblin_caida,
+    muerto:    spr_goblin_muerto
+};

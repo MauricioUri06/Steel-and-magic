@@ -1,5 +1,5 @@
 // ===== Enemigo cuerpo a cuerpo (padre de goblin, diablillo, demonio con escudo y orco) =====
-// Estados: perseguir -> aviso (quieto, parpadea, ya eligio hacia donde ataca) -> atacar -> recuperar -> perseguir
+// Estados: perseguir -> aviso (quieto con su sprite de aviso, ya eligio hacia donde ataca) -> atacar -> recuperar -> perseguir
 // El aviso le da tiempo al jugador para alejarse o esquivar con el dash.
 event_inherited();
 
@@ -123,17 +123,4 @@ dibujar_suelo = function() {
         draw_line_width(_x0, _y0, _x0 + lengthdir_x(_r.largo, dir_mira + _r.ang), _y0 + lengthdir_y(_r.largo, dir_mira + _r.ang), 1);
     }
     draw_set_alpha(1);
-};
-
-dibujar_extra = function() {
-    if (estado == "aviso" && tipo_ataque == "golpe" && (timer div 4) mod 2 == 0) {
-        // aviso parpadeante: donde va a pegar
-        draw_set_color(c_red);
-        draw_circle(area_x(), area_y(), area_radio, true);
-    } else if (estado == "atacar" && tipo_ataque == "golpe") {
-        draw_set_alpha(0.5);
-        draw_set_color(c_red);
-        draw_circle(area_x(), area_y(), area_radio, false);
-        draw_set_alpha(1);
-    }
 };

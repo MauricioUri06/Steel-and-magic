@@ -5,13 +5,22 @@ event_inherited();
 hp_max = 20;
 hp     = hp_max;
 vel    = 1.2;
-radio  = 13;
+radio  = 14;
 color  = make_colour_rgb(140, 40, 160);
 
 dano         = 4;
 rango_ataque = 32;
 area_radio   = 20;
 aviso        = 26;
+
+spr_por_estado = {
+    perseguir: spr_demonio_caminar,
+    aviso:     spr_demonio_aviso,
+    atacar:    spr_demonio_ataque,
+    recuperar: spr_demonio_recuperar,
+    cayendo:   spr_demonio_caida,
+    muerto:    spr_demonio_muerto
+};
 
 escudo_dir    = 0;     // hacia donde apunta el escudo
 escudo_giro   = 2.5;   // grados por paso
@@ -46,7 +55,8 @@ comportamiento = function() {
 dibujar_melee = dibujar_extra;
 dibujar_extra = function() {
     dibujar_melee();
-    if (!escudo_arriba()) return;
+    // con sprite el escudo ya se ve: el arco solo aparece un instante al bloquear (indica hacia donde cubre)
+    if (!escudo_arriba() || (spr_actual != -1 && bloqueo <= 0)) return;
     // arco del escudo
     draw_set_color(bloqueo > 0 ? c_white : c_ltgray);
     var _r = radio + 5;

@@ -15,3 +15,13 @@ proy_obj   = o_misil_enemigo;
 proy_vel   = 3;
 proy_dano  = 5;
 proy_color = c_orange;
+
+spr_por_estado = {
+    perseguir: spr_elite_caminar,
+    apuntar:   spr_elite_apuntar,
+    disparar:  spr_elite_disparo,
+    recuperar: spr_elite_recuperar,
+    cayendo:   spr_elite_caida,
+    muerto:    spr_elite_muerto
+};
+anim_vel = 0.1;   // pesado: camina mas lento
