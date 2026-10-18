@@ -10,6 +10,11 @@ musica_reiniciar();       // deja la musica como recien abierta (los globales so
 musica_para_room(room);   // suena mus_menu (ver scr_musica)
 meta_fila_hover = -1;
 meta_volver_hover = false;
+meta_reset_hover = false;
+meta_confirmacion_abierta = false;
+meta_confirmacion_sel = 0;       // 0 = cancelar, 1 = reiniciar
+meta_confirm_cancel_hover = false;
+meta_confirm_reset_hover = false;
 
 // --- estado ---
 sel = -1;                 // boton seleccionado (-1 = ninguno)

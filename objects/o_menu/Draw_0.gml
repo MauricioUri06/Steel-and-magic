@@ -237,13 +237,61 @@ else if (pantalla == "mejoras") {
         draw_set_halign(fa_left);
     }
 
-    var _mvx = room_width * 0.5 - 116 * _mu;
     var _mvy = _mpy + 432 * _mu;
-    var _mestado = meta_volver_hover ? (mouse_check_button(mb_left) ? 536 : 360) : 184;
-    draw_sprite_part_ext(spr_meta_ui_atlas, 0, _mestado, 472, 128, 40, _mvx, _mvy, 1.81 * _mu, 0.90 * _mu, c_white, 1);
+    var _mrx = room_width * 0.5 - 250 * _mu;
+    var _mvx = room_width * 0.5 + 30 * _mu;
+    var _mreset_estado = meta_reset_hover ? (mouse_check_button(mb_left) ? 536 : 360) : 184;
+    var _mvolver_estado = meta_volver_hover ? (mouse_check_button(mb_left) ? 536 : 360) : 184;
+    draw_sprite_part_ext(spr_meta_ui_atlas, 0, _mreset_estado, 472, 128, 40, _mrx, _mvy, 1.72 * _mu, 0.90 * _mu, c_white, 1);
+    draw_sprite_part_ext(spr_meta_ui_atlas, 0, _mvolver_estado, 472, 128, 40, _mvx, _mvy, 1.72 * _mu, 0.90 * _mu, c_white, 1);
     draw_set_halign(fa_center);
+    draw_set_color(meta_reset_hover ? make_colour_rgb(255, 201, 112) : make_colour_rgb(219, 151, 94));
+    draw_text_transformed(_mrx + 110 * _mu, _mvy + 10 * _mu, "REINICIAR MEJORAS", 0.68 * _mu, 0.68 * _mu, 0);
     draw_set_color(make_colour_rgb(232, 239, 235));
-    draw_text_transformed(room_width * 0.5, _mvy + 10 * _mu, "VOLVER AL MENU", 0.82 * _mu, 0.82 * _mu, 0);
+    draw_text_transformed(_mvx + 110 * _mu, _mvy + 10 * _mu, "VOLVER AL MENU", 0.76 * _mu, 0.76 * _mu, 0);
+
+    if (meta_confirmacion_abierta) {
+        // Advertencia modal con la misma paleta de acero, oro y energia cian.
+        draw_set_alpha(0.82);
+        draw_set_color(c_black);
+        draw_rectangle(0, 0, room_width, room_height, false);
+        draw_set_alpha(1);
+
+        var _mcx = room_width * 0.5, _mcy = room_height * 0.5;
+        var _mx1 = _mcx - 340 * _mu, _my1 = _mcy - 165 * _mu;
+        var _mx2 = _mcx + 340 * _mu, _my2 = _mcy + 155 * _mu;
+        draw_set_color(make_colour_rgb(8, 14, 23));
+        draw_rectangle(_mx1, _my1, _mx2, _my2, false);
+        draw_set_color(make_colour_rgb(159, 102, 33));
+        draw_rectangle(_mx1, _my1, _mx2, _my2, true);
+        draw_rectangle(_mx1 + 4 * _mu, _my1 + 4 * _mu, _mx2 - 4 * _mu, _my2 - 4 * _mu, true);
+        draw_set_color(make_colour_rgb(75, 215, 231));
+        draw_line_width(_mx1 + 18 * _mu, _my1 + 12 * _mu, _mx2 - 18 * _mu, _my1 + 12 * _mu, 2 * _mu);
+
+        draw_set_font(fuente_texto);
+        draw_set_halign(fa_center);
+        draw_set_valign(fa_middle);
+        draw_set_color(make_colour_rgb(255, 205, 91));
+        draw_text_transformed(_mcx, _mcy - 105 * _mu, "REINICIAR MEJORAS", 1.25 * _mu, 1.25 * _mu, 0);
+        draw_set_color(make_colour_rgb(236, 238, 236));
+        draw_text_transformed(_mcx, _mcy - 52 * _mu, "¿ESTÁS SEGURO?", 0.95 * _mu, 0.95 * _mu, 0);
+        draw_set_color(make_colour_rgb(206, 216, 220));
+        draw_text_transformed(_mcx, _mcy - 15 * _mu, "Perderás todos los niveles de tus mejoras permanentes.", 0.68 * _mu, 0.68 * _mu, 0);
+        draw_set_color(make_colour_rgb(92, 211, 225));
+        draw_text_transformed(_mcx, _mcy + 14 * _mu, "Tus monedas y récords se conservarán.", 0.68 * _mu, 0.68 * _mu, 0);
+
+        var _ccx = _mcx - 145 * _mu, _crx = _mcx + 145 * _mu;
+        var _cby = _mcy + 92 * _mu, _cbw = 240 * _mu, _cbh = 64 * _mu;
+        var _cf_cancel = (meta_confirmacion_sel == 0 || meta_confirm_cancel_hover) ? sprite_get_number(s_boton_menu) - 1 : 0;
+        var _cf_reset = (meta_confirmacion_sel == 1 || meta_confirm_reset_hover) ? sprite_get_number(s_boton_menu) - 1 : 0;
+        draw_sprite_stretched(s_boton_menu, _cf_cancel, _ccx - _cbw * 0.5, _cby - _cbh * 0.5, _cbw, _cbh);
+        draw_sprite_stretched(s_boton_menu, _cf_reset, _crx - _cbw * 0.5, _cby - _cbh * 0.5, _cbw, _cbh);
+        draw_set_font(fuente_pix);
+        draw_set_color(meta_confirmacion_sel == 0 ? col_cian : col_texto);
+        draw_text_transformed(_ccx, _cby, "CANCELAR", 1.1 * _mu, 1.1 * _mu, 0);
+        draw_set_color(meta_confirmacion_sel == 1 ? make_colour_rgb(255, 187, 96) : col_texto);
+        draw_text_transformed(_crx, _cby, "REINICIAR", 1.1 * _mu, 1.1 * _mu, 0);
+    }
 }
 else if (pantalla == "opciones") {
     dibujar_panel("Options");

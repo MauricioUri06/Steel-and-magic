@@ -27,7 +27,13 @@ my_prev = _my;
 
 var _resaltado = -1;      // boton que se ve mecanico
 volver_hover = false;
+<<<<<<< HEAD
 opt_hover = false;
+=======
+meta_reset_hover = false;
+meta_confirm_cancel_hover = false;
+meta_confirm_reset_hover = false;
+>>>>>>> bc5c0fb533b438faed69e713ba8fe290103d4506
 
 if (!fade_saliendo) {
     if (pantalla == "principal") {
@@ -124,32 +130,71 @@ if (!fade_saliendo) {
         var _mfy = _mpy + 88 * _mu;
 
         meta_fila_hover = -1;
-        for (var _mi = 0; _mi < array_length(global.meta_progreso.mejoras); _mi++) {
-            var _mby = _mfy + _mi * 40 * _mu + 4 * _mu;
-            var _mbx = _mfx + 625 * _mu;
-            if (point_in_rectangle(_mx, _my, _mbx, _mby, _mbx + 102 * _mu, _mby + 32 * _mu)) meta_fila_hover = _mi;
-        }
+        if (meta_confirmacion_abierta) {
+            // La advertencia es modal: nada de la lista puede pulsarse mientras esta abierta.
+            var _ccx = room_width * 0.5 - 145 * _mu;
+            var _crx = room_width * 0.5 + 145 * _mu;
+            var _cby = room_height * 0.5 + 92 * _mu;
+            var _cbw = 240 * _mu, _cbh = 64 * _mu;
+            meta_confirm_cancel_hover = point_in_rectangle(_mx, _my, _ccx - _cbw * 0.5, _cby - _cbh * 0.5, _ccx + _cbw * 0.5, _cby + _cbh * 0.5);
+            meta_confirm_reset_hover = point_in_rectangle(_mx, _my, _crx - _cbw * 0.5, _cby - _cbh * 0.5, _crx + _cbw * 0.5, _cby + _cbh * 0.5);
 
-        if (meta_fila_hover != meta_hover_snd) {
-            if (meta_fila_hover >= 0) sfx_play(sfx_boton_hover);
-            meta_hover_snd = meta_fila_hover;
-        }
+            if (meta_confirm_cancel_hover) meta_confirmacion_sel = 0;
+            if (meta_confirm_reset_hover) meta_confirmacion_sel = 1;
+            if (keyboard_check_pressed(vk_left) || keyboard_check_pressed(ord("A"))) meta_confirmacion_sel = 0;
+            if (keyboard_check_pressed(vk_right) || keyboard_check_pressed(ord("D"))) meta_confirmacion_sel = 1;
 
-        var _mvx = room_width * 0.5 - 116 * _mu;
-        var _mvy = _mpy + 432 * _mu;
-        meta_volver_hover = point_in_rectangle(_mx, _my, _mvx, _mvy, _mvx + 232 * _mu, _mvy + 36 * _mu);
-        volver_hover = meta_volver_hover;
-
-        if (bloqueo <= 0 && mouse_check_button_pressed(mb_left)) {
-            if (meta_fila_hover >= 0) {
-                if (meta_comprar_mejora(meta_fila_hover)) sfx_play(sfx_compra);
-                else sfx_play(sfx_error);   // no alcanzan las monedas o ya esta al maximo
+            var _cancelar = keyboard_check_pressed(vk_escape) || keyboard_check_pressed(vk_backspace)
+                         || (meta_confirm_cancel_hover && mouse_check_button_pressed(mb_left));
+            var _confirmar = (meta_confirm_reset_hover && mouse_check_button_pressed(mb_left))
+                          || ((keyboard_check_pressed(vk_enter) || keyboard_check_pressed(vk_space)) && meta_confirmacion_sel == 1);
+            if (_cancelar || ((keyboard_check_pressed(vk_enter) || keyboard_check_pressed(vk_space)) && meta_confirmacion_sel == 0)) {
+                sfx_play(sfx_boton_clic);
+                meta_confirmacion_abierta = false;
+                bloqueo = 10;
             }
-            else if (meta_volver_hover) { sfx_play(sfx_boton_clic); pantalla = "principal"; bloqueo = 15; }
+            else if (_confirmar) {
+                meta_reiniciar_mejoras();
+                sfx_play(sfx_compra);
+                meta_confirmacion_abierta = false;
+                bloqueo = 15;
+            }
         }
-        if (keyboard_check_pressed(vk_escape) || keyboard_check_pressed(vk_backspace)) {
-            pantalla = "principal";
-            bloqueo = 15;
+        else {
+            for (var _mi = 0; _mi < array_length(global.meta_progreso.mejoras); _mi++) {
+                var _mby = _mfy + _mi * 40 * _mu + 4 * _mu;
+                var _mbx = _mfx + 625 * _mu;
+                if (point_in_rectangle(_mx, _my, _mbx, _mby, _mbx + 102 * _mu, _mby + 32 * _mu)) meta_fila_hover = _mi;
+            }
+
+            if (meta_fila_hover != meta_hover_snd) {
+                if (meta_fila_hover >= 0) sfx_play(sfx_boton_hover);
+                meta_hover_snd = meta_fila_hover;
+            }
+
+            var _mvy = _mpy + 432 * _mu;
+            var _mrx = room_width * 0.5 - 250 * _mu;
+            var _mvx = room_width * 0.5 + 30 * _mu;
+            meta_reset_hover = point_in_rectangle(_mx, _my, _mrx, _mvy, _mrx + 220 * _mu, _mvy + 36 * _mu);
+            meta_volver_hover = point_in_rectangle(_mx, _my, _mvx, _mvy, _mvx + 220 * _mu, _mvy + 36 * _mu);
+            volver_hover = meta_volver_hover;
+
+            if (bloqueo <= 0 && mouse_check_button_pressed(mb_left)) {
+                if (meta_fila_hover >= 0) {
+                    if (meta_comprar_mejora(meta_fila_hover)) sfx_play(sfx_compra);
+                    else sfx_play(sfx_error);   // no alcanzan las monedas o ya esta al maximo
+                }
+                else if (meta_reset_hover) {
+                    sfx_play(sfx_boton_clic);
+                    meta_confirmacion_abierta = true;
+                    meta_confirmacion_sel = 0;
+                }
+                else if (meta_volver_hover) { sfx_play(sfx_boton_clic); pantalla = "principal"; bloqueo = 15; }
+            }
+            if (keyboard_check_pressed(vk_escape) || keyboard_check_pressed(vk_backspace)) {
+                pantalla = "principal";
+                bloqueo = 15;
+            }
         }
     }
 }

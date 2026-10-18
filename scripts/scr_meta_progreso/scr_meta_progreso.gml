@@ -116,6 +116,17 @@ function meta_comprar_mejora(_indice) {
     return true;
 }
 
+/// Reinicia solo los niveles de las mejoras permanentes.
+/// Las monedas, los records y las victorias pertenecen a otros progresos.
+function meta_reiniciar_mejoras() {
+    meta_inicializar();
+    var _mejoras = global.meta_progreso.mejoras;
+    for (var _i = 0; _i < array_length(_mejoras); _i++) {
+        _mejoras[_i].nivel = 0;
+    }
+    meta_guardar();
+}
+
 function meta_sumar_monedas_run(_cantidad) {
     meta_inicializar();
     global.meta_progreso.monedas_run += max(0, floor(_cantidad));

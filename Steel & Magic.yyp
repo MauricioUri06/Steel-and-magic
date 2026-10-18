@@ -189,6 +189,7 @@
     {"id":{"name":"s_carta_curacion","path":"sprites/s_carta_curacion/s_carta_curacion.yy",},},
     {"id":{"name":"s_carta_doble_tajo","path":"sprites/s_carta_doble_tajo/s_carta_doble_tajo.yy",},},
     {"id":{"name":"s_carta_empuje","path":"sprites/s_carta_empuje/s_carta_empuje.yy",},},
+    {"id":{"name":"s_carta_perforacion","path":"sprites/s_carta_perforacion/s_carta_perforacion.yy",},},
     {"id":{"name":"s_carta_fuego_dash","path":"sprites/s_carta_fuego_dash/s_carta_fuego_dash.yy",},},
     {"id":{"name":"s_carta_quemadura_ralentizante","path":"sprites/s_carta_quemadura_ralentizante/s_carta_quemadura_ralentizante.yy",},},
     {"id":{"name":"s_carta_recarga_dash","path":"sprites/s_carta_recarga_dash/s_carta_recarga_dash.yy",},},
