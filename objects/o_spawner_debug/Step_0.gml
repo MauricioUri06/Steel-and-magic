@@ -10,4 +10,5 @@ if (keyboard_check_pressed(ord("R"))) {
     instance_destroy(o_proyectil_enemigo);
     instance_destroy(o_zona_peligro);
     instance_destroy(o_onda_choque);
+    instance_destroy(o_grieta_suelo);
 }

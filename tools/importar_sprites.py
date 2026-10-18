@@ -15,6 +15,7 @@ Uso (desde la raiz del repo, requiere pillow):
     # fotogramas que se tocan (efectos que invaden al vecino): dividir en 4 columnas x 4 filas
     python tools/importar_sprites.py art/enemies/dragon/dragon_sheet.png 64 spr_dragon --cuadricula 4x4 ...
 
+--marcos: la hoja trae lineas de grilla dibujadas (fondo negro, marcos grises); cada celda es un fotograma.
 --borrar INDICE=x0,y0,x1,y1 vacia una zona dentro de ese recorte (se puede repetir).
 --recorte INDICE=x0,y0,x1,y1 corta ese fotograma a mano (en pixeles de la hoja original), para cuando la
 deteccion automatica lo corta mal. Si la hoja no tiene transparencia, se borra el fondo (del color de las esquinas) conectado con los bordes.
@@ -273,6 +274,57 @@ def recortes_cuadricula(im, cols, filas):
     return out
 
 
+def recortes_marcos(im):
+    """Hoja con lineas de grilla dibujadas (fondo negro y marcos grises): detecta las lineas, corta cada
+    celda por dentro y le quita el fondo. Cada celda no vacia es un fotograma."""
+    rgb = im.convert('RGB')
+    W, H = rgb.size
+    px = rgb.load()
+    gris = lambda c: 25 <= c[0] <= 95 and max(c) - min(c) <= 12
+
+    def lineas(n, es_linea):
+        # grupos de posiciones seguidas que son linea -> espacios entre ellos = celdas
+        pos = [i for i in range(n) if es_linea(i)]
+        grupos, ini = [], None
+        for i, p in enumerate(pos):
+            if ini is None: ini = p
+            if i + 1 == len(pos) or pos[i + 1] != p + 1:
+                grupos.append((ini, p)); ini = None
+        bordes = [(-1, -1)] + grupos + [(n, n)]
+        return [(a[1] + 1, b[0]) for a, b in zip(bordes, bordes[1:]) if b[0] - a[1] > 10]
+
+    cols = lineas(W, lambda x: sum(gris(px[x, y]) for y in range(0, H, 3)) > 0.7 * H / 3)
+    filas = lineas(H, lambda y: sum(gris(px[x, y]) for x in range(0, W, 3)) > 0.7 * W / 3)
+    out = []
+    for y0, y1 in filas:
+        for x0, x1 in cols:
+            c = fondo_negro(rgb.crop((x0 + 2, y0 + 2, x1 - 2, y1 - 2)))   # por dentro: sin restos del marco
+            bb = c.getbbox()
+            # celdas vacias (o con unas motas de compresion) no son fotogramas
+            if bb and (bb[2] - bb[0]) * (bb[3] - bb[1]) > 0.02 * c.width * c.height:
+                out.append(c.crop(bb))
+    return out
+
+
+def fondo_negro(im, maximo=16):
+    """Borra el fondo casi negro conectado con el borde (la compresion deja negros 'sucios' como (5,7,6))."""
+    im = im.convert('RGBA')
+    w, h = im.size
+    px = im.load()
+    oscuro = lambda x, y: max(px[x, y][:3]) <= maximo
+    pila = [(x, y) for x in range(w) for y in (0, h - 1)] + [(x, y) for y in range(h) for x in (0, w - 1)]
+    pila = [p for p in pila if oscuro(*p)]
+    visto = set(pila)
+    while pila:
+        x, y = pila.pop()
+        px[x, y] = (0, 0, 0, 0)
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if 0 <= nx < w and 0 <= ny < h and (nx, ny) not in visto and oscuro(nx, ny):
+                visto.add((nx, ny))
+                pila.append((nx, ny))
+    return im
+
+
 def quitar_fondo(im, tolerancia=3):
     """Hoja sin transparencia: borra el fondo (del color de las esquinas) conectado con los bordes."""
     im = im.convert('RGBA')
@@ -319,7 +371,8 @@ def main():
             else: destino.setdefault(int(k), []).append(caja)
             del args[i:i + 2]
     grilla = '--grilla' in args
-    args = [a for a in args if a != '--grilla']
+    marcos = '--marcos' in args
+    args = [a for a in args if a not in ('--grilla', '--marcos')]
     hoja, celda, prefijo, specs = args[0], args[1], args[2], args[3:]
     celda = tuple(int(n) for n in celda.lower().split('x')) if 'x' in celda.lower() else (int(celda), int(celda))
     im = Image.open(hoja)
@@ -327,7 +380,9 @@ def main():
     if grilla:
         celdas = celdas_grilla(im, celda)
     else:
-        recortes = recortes_cuadricula(im, *cuadricula) if cuadricula else [im.crop(b) for b in cajas(im)]
+        if marcos: recortes = recortes_marcos(Image.open(hoja))
+        elif cuadricula: recortes = recortes_cuadricula(im, *cuadricula)
+        else: recortes = [im.crop(b) for b in cajas(im)]
         for i, caja in recortes_manual.items():
             recortes[i] = recorte_limpio(im, caja, borrados.get(i, ()))
         celdas = celdas_ia(recortes, celda)

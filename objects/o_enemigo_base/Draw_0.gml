@@ -8,9 +8,9 @@ var _spr = buscar_sprite();
 if (_spr != -1) {
     if (_spr != spr_actual) { spr_actual = _spr; anim = 0; }
     else anim += anim_vel;
-    // la caida y el cadaver no hacen bucle: se quedan en el ultimo cuadro
+    // la caida, el cadaver y la recuperacion no hacen bucle: se quedan en el ultimo cuadro
     var _n = sprite_get_number(_spr);
-    var _img = (estado == "cayendo" || estado == "muerto") ? min(anim, _n - 1) : anim mod _n;
+    var _img = (estado == "cayendo" || estado == "muerto" || estado == "recuperar") ? min(anim, _n - 1) : anim mod _n;
     draw_sprite_ext(_spr, _img, x, y, lado * escala_sprite, escala_sprite, 0, c_white, _alpha);
     if (flash > 0) {
         // destello blanco al recibir dano

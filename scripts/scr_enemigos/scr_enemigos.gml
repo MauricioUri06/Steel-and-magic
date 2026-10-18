@@ -32,6 +32,11 @@ function crear_zona(_x, _y, _estilo, _radio, _aviso, _dano, _persistir = 0) {
                                  { estilo: _estilo, radio: _radio, aviso: _aviso, dano: _dano, persistir: _persistir });
 }
 
+/// Grietas en estrella en el suelo, solo estetica (ver o_grieta_suelo). Se dibujan debajo de todo.
+function crear_grietas(_x, _y, _radio) {
+    return instance_create_depth(_x, _y, 60, o_grieta_suelo, { radio: _radio });
+}
+
 /// Crea una onda de choque: un anillo que se expande desde (_x, _y). Se esquiva con el dash.
 function crear_onda(_x, _y, _radio_max, _vel, _dano, _color) {
     return instance_create_depth(_x, _y, 40, o_onda_choque, { radio_max: _radio_max, vel: _vel, dano: _dano, color: _color });

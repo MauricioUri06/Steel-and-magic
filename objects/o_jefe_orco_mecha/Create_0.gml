@@ -1,6 +1,7 @@
 // ===== Orco Mecha (jefe del acto 1) =====
 // Un orco dentro de un mecha. Ataques:
-//   embestida  3 cargas seguidas; cada una avisa con una grieta. Si choca contra una pared queda aturdido.
+//   salto      3 saltos seguidos hacia ti; cada uno avisa con una grieta y al caer agrieta el suelo.
+//              Si choca contra una pared queda aturdido.
 //   sismo      golpea el suelo: dos ondas de choque que se esquivan con el dash o alejandose.
 //   misiles    lanza misiles al aire: caen donde marcan las sombras (la primera, donde estas parado).
 event_inherited();
@@ -8,7 +9,8 @@ event_inherited();
 nombre = "Orco Mecha";
 hp_max = 350;
 hp     = hp_max;
-radio  = 30;
+radio  = 32;
+escala_sprite = 1.6;   // el sprite mide 96x80
 vel    = 0.8;
 color  = make_colour_rgb(80, 100, 60);
 
@@ -18,47 +20,57 @@ pausa_max  = 80;
 
 fases = [
     { hp: 1, ataques: [
-        { nombre: "embestida", aviso: 45, aviso_rep: 30, dur: 26, recuperacion: 50, repetir: 3 },
+        { nombre: "salto",     aviso: 45, aviso_rep: 30, dur: 26, recuperacion: 50, repetir: 3 },
         { nombre: "sismo",     aviso: 50, dur: 50, recuperacion: 40 },
         { nombre: "misiles",   aviso: 35, dur: 56, recuperacion: 30 }
     ]}
 ];
 
-vel_embestida  = 8;
-dano_embestida = 7;
+vel_salto      = 8;
+dano_salto     = 7;
 aturdido       = 90;    // pasos extra de recuperacion si choca contra una pared
 dano_sismo     = 5;
 color_polvo    = make_colour_rgb(200, 180, 140);
 dano_misil     = 4;
 golpeo         = false;
 
+// Al caer de un salto: grietas y polvo (solo estetica).
+aterrizar = function() {
+    crear_grietas(x + lado * radio * 0.5, y + pies_dy(), 60);
+    crear_onda(x, y + pies_dy(), 70, 3, 0, color_polvo);
+};
+
 al_avisar = function(_n) {
-    if (_n == "embestida") {
+    if (_n == "salto") {
         dir_mira = point_direction(x, y, o_player.x, o_player.y);   // la direccion queda fija: se puede esquivar
-        crear_grieta(vel_embestida * ataque.dur);
+        crear_grieta(vel_salto * ataque.dur);
     }
 };
 
 al_atacar = function(_n) {
     switch (_n) {
-        case "embestida": golpeo = false; break;
-        case "sismo":     crear_onda(x, y + pies_dy(), 280, 4, dano_sismo, color_polvo); break;
+        case "salto": golpeo = false; break;
+        case "sismo":
+            crear_onda(x, y + pies_dy(), 280, 4, dano_sismo, color_polvo);
+            crear_grietas(x + lado * radio * 0.8, y + pies_dy(), 80);   // donde pega el puno (solo estetica)
+            break;
     }
 };
 
 durante_ataque = function(_n, _t) {
     switch (_n) {
-        case "embestida":
-            if (place_meeting(x + lengthdir_x(vel_embestida, dir_mira), y + lengthdir_y(vel_embestida, dir_mira), o_solid)) {
-                // choco contra la pared: corta las cargas que faltan y queda aturdido
+        case "salto":
+            if (place_meeting(x + lengthdir_x(vel_salto, dir_mira), y + lengthdir_y(vel_salto, dir_mira), o_solid)) {
+                // choco contra la pared: corta los saltos que faltan y queda aturdido
                 ataque_terminado = true;
                 repeticiones = 1;
                 recuperacion_extra = aturdido;
-                crear_onda(x, y + pies_dy(), 70, 3, 0, color_polvo);   // polvo del golpe (sin dano)
+                aterrizar();
             } else {
-                mover(dir_mira, vel_embestida);
+                mover(dir_mira, vel_salto);
+                if (_t == ataque.dur - 1) aterrizar();   // ultimo paso del salto: cae
             }
-            if (!golpeo && jugador_cerca(x, y, radio)) golpeo = danar_jugador(dano_embestida);
+            if (!golpeo && jugador_cerca(x, y, radio)) golpeo = danar_jugador(dano_salto);
             break;
 
         case "sismo":
@@ -77,9 +89,18 @@ durante_ataque = function(_n, _t) {
 };
 
 dibujar_suelo = function() {
-    if (estado == "aviso" && variante == "embestida") dibujar_grieta(min(1, (1 - timer / aviso_total) / 0.7));
+    if (estado == "aviso" && variante == "salto") dibujar_grieta(min(1, (1 - timer / aviso_total) / 0.7));
 };
 
-// Sprites cuando esten (claves: estado o "estado_ataque"):
-// spr_por_estado = { perseguir: ..., aviso_embestida: ..., atacar_embestida: ..., aviso_sismo: ..., atacar_sismo: ...,
-//                    aviso_misiles: ..., atacar_misiles: ..., recuperar: ..., cayendo: ..., muerto: ... };
+// Sprites (claves: estado o "estado_ataque"). El salto tiene los suyos; sismo y misiles usan aviso y golpe.
+spr_por_estado = {
+    perseguir: spr_orco_mecha_caminar,
+    aviso_salto:     spr_orco_mecha_aviso_salto,
+    atacar_salto:    spr_orco_mecha_salto,
+    recuperar_salto: spr_orco_mecha_aterrizaje,
+    aviso:     spr_orco_mecha_aviso,
+    atacar:    spr_orco_mecha_ataque,
+    recuperar: spr_orco_mecha_recuperar,
+    cayendo:   spr_orco_mecha_caida,
+    muerto:    spr_orco_mecha_muerto
+};
