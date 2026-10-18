@@ -15,7 +15,7 @@ cola           = [];                                 // enemigos que faltan apar
 timer_cola     = 0;
 max_vivos      = 60;                                 // tope de enemigos a la vez (rendimiento): la cola espera
 victoria       = false;
-debug          = true;   // true: la tecla N lanza la siguiente oleada ya. Ponlo en false para la version final.
+debug          = false;  // true: la tecla N lanza la siguiente oleada ya (para probar).
 
 // tipos de enemigos: coste = puntos que gasta, desde = oleada desde la que puede aparecer
 tipos = [
