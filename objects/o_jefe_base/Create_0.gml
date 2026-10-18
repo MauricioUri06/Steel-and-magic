@@ -26,6 +26,7 @@ radio        = 26;
 vel          = 1;
 color        = c_maroon;
 monedas_drop = 30;
+xp_drop      = 25;
 pesado       = true;    // los enemigos normales no lo empujan
 barra_vida   = false;   // usa la barra grande del HUD (Draw GUI)
 dur_caida    = 40;

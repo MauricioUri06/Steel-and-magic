@@ -3,9 +3,10 @@
 #macro JUGADOR_RADIO 12   // radio aproximado del cuerpo del jugador (px), para los golpes por distancia
 
 /// Le hace dano al jugador si no esta en dash. Devuelve true si lo golpeo.
+/// Pasa por o_player.recibir_dano, asi aplica la mejora de Armadura.
 function danar_jugador(_dano) {
-    if (!instance_exists(o_player) || o_player.inmune) return false;
-    o_player.hp -= _dano;
+    if (!instance_exists(o_player) || o_player.inmune || o_player.muerto) return false;
+    o_player.recibir_dano(_dano);
     return true;
 }
 

@@ -138,6 +138,7 @@
     {"id":{"name":"o_meta_manager","path":"objects/o_meta_manager/o_meta_manager.yy",},},
     {"id":{"name":"o_menu","path":"objects/o_menu/o_menu.yy",},},
     {"id":{"name":"o_player","path":"objects/o_player/o_player.yy",},},
+    {"id":{"name":"o_orbe_xp","path":"objects/o_orbe_xp/o_orbe_xp.yy",},},
     {"id":{"name":"o_proyectil_caballero","path":"objects/o_proyectil_caballero/o_proyectil_caballero.yy",},},
     {"id":{"name":"o_proyectil_mago","path":"objects/o_proyectil_mago/o_proyectil_mago.yy",},},
     {"id":{"name":"o_proyectil_soldado","path":"objects/o_proyectil_soldado/o_proyectil_soldado.yy",},},

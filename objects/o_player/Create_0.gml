@@ -632,6 +632,7 @@ if (file_exists("arranque.ini")) {
 // - Para que los enemigos le hagan dano al jugador:   o_player.recibir_dano(cantidad);   (la armadura lo reduce y el dash lo evita)
 debug_cartas = true;     // true: X = +5 de experiencia, K = cuenta un enemigo derrotado (+1 xp), H = recibes 5 de dano. Ponlo en false cuando haya enemigos.
 nivel        = 1;
+nivel_max    = 12;       // al llegar aqui ya no se sube mas (la experiencia deja de sumar)
 xp           = 0;
 xp_base      = 10;       // experiencia para pasar del nivel 1 al 2
 xp_crece     = 1.25;     // cada nivel pide este numero de veces mas que el anterior (sube este numero para hacerlo mas dificil)
@@ -662,15 +663,16 @@ recibir_dano = function(_cantidad) {
 };
 
 ganar_xp = function(_cantidad) {
-    if (muerto) return;
+    if (muerto || nivel >= nivel_max) return;
     xp += _cantidad;
-    while (xp >= xp_sig) {
+    while (xp >= xp_sig && nivel < nivel_max) {
         xp -= xp_sig;
         nivel += 1;
         xp_sig = xp_necesaria(nivel);
         cartas_pendientes += 1;
         show_debug_message("[xp] subiste al nivel " + string(nivel) + " (siguiente nivel: " + string(xp_sig) + " xp)");
     }
+    if (nivel >= nivel_max) xp = 0;
 };
 
 enemigo_derrotado = function(_xp = 1) {

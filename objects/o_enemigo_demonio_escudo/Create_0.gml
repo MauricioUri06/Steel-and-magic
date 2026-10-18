@@ -4,6 +4,7 @@
 event_inherited();
 hp_max = 20;
 hp     = hp_max;
+xp_drop = 3;
 vel    = 1.2;
 radio  = 14;
 color  = make_colour_rgb(140, 40, 160);

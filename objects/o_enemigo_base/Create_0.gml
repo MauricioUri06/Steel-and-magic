@@ -11,6 +11,7 @@ radio        = 12;      // tamano del dibujo (la colision usa la mascara spr_ene
 color        = c_red;
 volador      = false;   // true = ignora las paredes (o_solid)
 monedas_drop = 1;       // monedas que suma al jugador al morir
+xp_drop      = 1;       // experiencia que suelta al morir (en orbes que el jugador junta)
 
 mask_index = spr_enemigo_mask;   // los hijos no heredan la mascara del .yy; en el Step se escala segun el radio
 
@@ -60,7 +61,11 @@ recibir_dano = function(_cantidad) {
 
 // Deja de ser enemigo (no recibe golpes, no estorba) y empieza la animacion de muerte.
 morir = function() {
-    if (instance_exists(o_player)) o_player.monedas += monedas_drop;
+    if (instance_exists(o_player)) {
+        o_player.monedas += monedas_drop;
+        o_player.enemigo_derrotado(0);   // cuenta la baja (carta de Curacion); la xp va en los orbes
+    }
+    soltar_xp(xp_drop);
     es_enemigo = false;
     mask_index = -1;    // sin sprite_index = sin colision
     flash      = 0;
@@ -68,6 +73,15 @@ morir = function() {
     variante   = "";
     estado     = "cayendo";
     timer      = dur_caida;
+};
+
+// Suelta la experiencia en orbes (como mucho 6; si hay mucha, cada orbe vale mas).
+soltar_xp = function(_xp) {
+    var _n = min(_xp, 6);
+    for (var _i = 0; _i < _n; _i++) {
+        var _valor = (_xp div _n) + (_i < _xp mod _n ? 1 : 0);
+        instance_create_depth(x, y, depth + 1, o_orbe_xp, { valor: _valor });
+    }
 };
 
 // Mueve en un angulo; si no vuela, se desliza contra las paredes (cada eje por separado).
