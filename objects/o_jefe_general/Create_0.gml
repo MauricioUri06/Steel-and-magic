@@ -14,6 +14,7 @@ nombre = "General Demonio";
 hp_max = 500;
 hp     = hp_max;
 radio  = 24;
+escala_sprite = 1.15;   // el sprite (96x80) es grande: un poco menos que la escala del jugador
 vel    = 1.2;
 color  = make_colour_rgb(150, 20, 30);
 
@@ -175,6 +176,20 @@ dibujar_extra = function() {
     }
 };
 
-// Sprites cuando esten (claves: estado o "estado_ataque"; fase 2 con "f2_" delante):
-// spr_por_estado = { perseguir: ..., aviso_tajo: ..., atacar_tajo: ..., aviso_invocar: ..., transicion: ...,
-//                    f2_perseguir: ..., f2_aviso_espiral: ..., recuperar: ..., cayendo: ..., muerto: ... };
+// Sprites (claves: estado o "estado_ataque"; la fase 2 usa las claves con "f2_" delante).
+spr_por_estado = {
+    perseguir: spr_general_caminar,
+    aviso:     spr_general_aviso,
+    atacar:    spr_general_ataque,
+    recuperar: spr_general_recuperar,
+    cayendo:   spr_general_caida,
+    muerto:    spr_general_muerto,
+
+    f2_perseguir:  spr_general2_caminar,
+    f2_transicion: spr_general2_aviso,
+    f2_aviso:      spr_general2_aviso,
+    f2_atacar:     spr_general2_ataque,
+    f2_recuperar:  spr_general2_recuperar,
+    f2_cayendo:    spr_general2_caida,
+    f2_muerto:     spr_general2_muerto
+};

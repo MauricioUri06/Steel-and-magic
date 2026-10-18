@@ -9,7 +9,9 @@ if (!variable_instance_exists(id, "color"))     color     = c_aqua;
 
 if (!variable_instance_exists(id, "radio"))     radio     = 4;     // radio del impacto (px)
 if (!variable_instance_exists(id, "alcance"))   alcance   = 600;   // distancia maxima antes de desaparecer
+if (!variable_instance_exists(id, "estilo"))    estilo    = "orbe"; // como se dibuja: "orbe" | "llama"
 recorrido = 0;
+parpadeo_ofs = irandom(2);   // para que las llamas no parpadeen todas a la vez
 
 // _al_jugador = true si choco con el jugador; false si choco con una pared o llego al alcance.
 impactar = function(_al_jugador) {

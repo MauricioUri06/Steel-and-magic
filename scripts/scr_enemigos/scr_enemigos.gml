@@ -14,15 +14,15 @@ function jugador_cerca(_x, _y, _r) {
     return instance_exists(o_player) && point_distance(_x, _y, o_player.x, o_player.y) <= _r + JUGADOR_RADIO;
 }
 
-/// Dispara una bala enemiga (o_proyectil_enemigo).
-function disparar_bala(_x, _y, _dir, _vel, _dano, _color, _radio = 4) {
+/// Dispara una bala enemiga (o_proyectil_enemigo). _estilo: "orbe" | "llama".
+function disparar_bala(_x, _y, _dir, _vel, _dano, _color, _radio = 4, _estilo = "orbe") {
     return instance_create_depth(_x, _y, -10, o_proyectil_enemigo,
-                                 { direccion: _dir, vel: _vel, dano: _dano, color: _color, radio: _radio });
+                                 { direccion: _dir, vel: _vel, dano: _dano, color: _color, radio: _radio, estilo: _estilo });
 }
 
 /// Dispara _n balas repartidas en circulo, empezando en el angulo _offset.
-function disparar_anillo(_x, _y, _n, _offset, _vel, _dano, _color, _radio = 4) {
-    for (var _i = 0; _i < _n; _i++) disparar_bala(_x, _y, _offset + _i * 360 / _n, _vel, _dano, _color, _radio);
+function disparar_anillo(_x, _y, _n, _offset, _vel, _dano, _color, _radio = 4, _estilo = "orbe") {
+    for (var _i = 0; _i < _n; _i++) disparar_bala(_x, _y, _offset + _i * 360 / _n, _vel, _dano, _color, _radio, _estilo);
 }
 
 /// Crea una zona de peligro en el suelo (ver o_zona_peligro).

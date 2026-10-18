@@ -9,7 +9,8 @@ event_inherited();
 nombre  = "Dragon cibernetico";
 hp_max  = 400;
 hp      = hp_max;
-radio   = 28;
+radio   = 40;
+escala_sprite = 2;   // mas grande que los demas (el sprite mide 96x80)
 vel     = 2;
 volador = true;
 depth   = -60;
@@ -39,7 +40,7 @@ sombra_x       = 0;
 sombra_y       = 0;
 vel_sombra     = 3.2;       // la sombra te persigue a esta velocidad...
 sombra_fija    = 25;        // ...y los ultimos pasos del aviso se queda quieta (para esquivar)
-radio_picada   = 56;
+radio_picada   = 70;
 dano_picada    = 7;
 
 dir_vuelo      = 0;
@@ -97,7 +98,7 @@ al_atacar = function(_n) {
         invulnerable = false;
         if (jugador_cerca(sombra_x, sombra_y, radio_picada)) danar_jugador(dano_picada);
         crear_onda(sombra_x, sombra_y, 130, 5, 3, color_plasma);
-        disparar_anillo(x, y, 12, random(30), 3, 2, color_plasma, 5);
+        disparar_anillo(x, y, 12, random(30), 3, 2, color_plasma, 5, "llama");
     }
 };
 
@@ -107,7 +108,7 @@ durante_ataque = function(_n, _t) {
             if (_t mod 3 == 0) {
                 var _ang = dir_apunta - apertura / 2 + apertura * _t / ataque.dur;
                 dir_mira = _ang;
-                disparar_bala(x + lengthdir_x(radio, _ang), y + lengthdir_y(radio, _ang), _ang, 4.5, dano_aliento, color_plasma, 5);
+                disparar_bala(x + lengthdir_x(radio, _ang), y + lengthdir_y(radio, _ang), _ang, 4.5, dano_aliento, color_plasma, 5, "llama");
             }
             break;
         case "bombardeo":
@@ -129,6 +130,13 @@ dibujar_suelo = function() {
     }
 };
 
-// Sprites cuando esten (claves: estado o "estado_ataque"):
-// spr_por_estado = { perseguir: ..., aviso_aliento: ..., atacar_aliento: ..., aviso_picada: ..., atacar_picada: ...,
-//                    atacar_bombardeo: ..., recuperar: ..., cayendo: ..., muerto: ... };
+// Sprites (claves: estado o "estado_ataque"). La picada en el aire es invisible; al caer queda en el suelo.
+spr_por_estado = {
+    perseguir:      spr_dragon_volar,
+    aviso_aliento:  spr_dragon_aviso_aliento,
+    atacar_aliento: spr_dragon_aliento,
+    atacar_picada:  spr_dragon_caminar,
+    recuperar:      spr_dragon_recuperar,
+    cayendo:        spr_dragon_caida,
+    muerto:         spr_dragon_muerto
+};
