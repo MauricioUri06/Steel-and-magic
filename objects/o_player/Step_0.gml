@@ -330,7 +330,7 @@ if (proy_pendiente) {
             // el caballero lanza 1, 2 o 3 tajos (en triangulo) segun sus mejoras; las demas clases, uno
             var _forma = formacion_ataque(clase, _pd);
             if (clase == "cab") sfx_play(sfx_tajo, 0.9, 1, 0.06, 40);
-            else if (clase == "sol") sfx_play(sfx_disparo_soldado, 0.7, 1, 0.07, 40);   // una vez por rafaga, aunque salgan 3 o 5 balas
+            else if (clase == "sol") sfx_play(sfx_disparo_soldado, 0.7, 1, 0.07, 40);   // una vez por rafaga, aunque salgan 2 o 3 balas
             for (var _j = 0; _j < array_length(_forma); _j++) {
                 var _f = _forma[_j];
                 var _px = x + lengthdir_x(_f[0], _pa) + lengthdir_x(_f[1], _pa + 90);

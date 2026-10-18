@@ -127,7 +127,7 @@ espejismo_color = make_colour_rgb(90, 220, 255);   // tinte (cian)
 // El mago todavia no tiene proyectil (no esta en la lista).
 proy = {
     cab: { obj: o_proyectil_caballero, frame: 2, dano: 5, escala: 2.6, dist: 32, cadencia: 0 },   // (antes dano 4, escala 2, dist 26: el caballero se sentia debil)
-    sol: { obj: o_proyectil_soldado,   frame: 2, dano: 2, escala: 1, dist: 30, cadencia: 5 }
+    sol: { obj: o_proyectil_soldado,   frame: 2, dano: 1.5, escala: 1, dist: 30, cadencia: 5 }   // (antes dano 2: el soldado estaba muy roto)
 };
 proy_pendiente = false;   // hay un proyectil por salir en el ataque actual
 proy_clase     = "";      // clase que inicio ese ataque
@@ -142,8 +142,8 @@ mago_cfg = {
     recarga: 0.9,             // segundos de espera entre un disparo y el siguiente (sube este numero para disparar mas lento)
     escala_min: 0.7,          // tamano de la bola sin carga (relativo al jugador)
     escala_max: 2.2,          // tamano de la bola con carga maxima
-    dano_min: 3,              // dano del impacto directo sin carga
-    dano_max: 8,              // dano del impacto directo con carga maxima
+    dano_min: 4,              // dano del impacto directo sin carga (antes 3)
+    dano_max: 10,             // dano del impacto directo con carga maxima (antes 8)
     efectos_min: 2,           // efectos de fuego que deja en el suelo sin carga
     efectos_max: 8,           // efectos que deja con carga maxima
     escala_efecto_min: 1,     // tamano de cada efecto (relativo al jugador)
@@ -848,7 +848,7 @@ hud_estadisticas_arma = function() {
 tajo_alcance           = 52;      // alcance base del tajo del caballero (px; antes 40). Tajo mas largo lo multiplica
 tajo_largo_mult        = 1.75;    // Tajo mas largo: el alcance se multiplica por esto
 cadencia_por_nivel     = 0.30;    // Cadencia (soldado): +30% de disparos por segundo
-abanico_balas          = [1, 3, 5];   // Balas en abanico: balas por disparo segun el nivel de la carta (0, 1, 2)
+abanico_balas          = [1, 2, 3];   // Balas en abanico: balas por disparo segun el nivel de la carta (0, 1, 2); antes 1, 3, 5
 abanico_grados         = 9;       // separacion entre las balas del abanico (grados)
 carga_rapida_por_nivel = 0.25;    // Carga mas rapida (mago): la carga maxima tarda 25% menos por nivel
 bola_grande_mult       = 1.5;     // Bola maxima mas grande (mago): el tamano maximo se multiplica por esto
@@ -871,7 +871,7 @@ carga_mult    = function() { return max(0.2, 1 - carga_rapida_por_nivel * mejora
 bola_mult     = function() { return 1 + (bola_grande_mult - 1) * mejoras.bola_grande; };
 alcance_tajo  = function() { return tajo_alcance * (1 + (tajo_largo_mult - 1) * mejoras.tajo_largo); };
 
-// Que sale en cada ataque: el caballero 1, 2 o 3 tajos | el soldado 1, 3 o 5 balas en abanico | el mago una bola (no usa esto)
+// Que sale en cada ataque: el caballero 1, 2 o 3 tajos | el soldado 1, 2 o 3 balas en abanico | el mago una bola (no usa esto)
 // Cada elemento = [adelante (px), lateral (px), desvio de angulo]
 formacion_ataque = function(_clase, _pd) {
     if (_clase == "cab") return tajos_formacion[mejoras.doble_tajo + mejoras.tajo_triangular];
@@ -1114,7 +1114,6 @@ cartas_ui = {
     m_nivel:   texto_pixel("Nivel", _fc),
     m_barra:   texto_pixel("/", _fc),
     m_vacio:   texto_pixel("Todavía no tienes mejoras", _fb),
-    m_cerrar:  texto_pixel("M o Esc para cerrar", _fb),
     dig:       []
 };
 for (var _d = 0; _d < 10; _d++) array_push(cartas_ui.dig, texto_pixel(string(_d), _fc));
@@ -1131,7 +1130,6 @@ cartas_liberar = function() {
     sprite_delete(cartas_ui.m_nivel);
     sprite_delete(cartas_ui.m_barra);
     sprite_delete(cartas_ui.m_vacio);
-    sprite_delete(cartas_ui.m_cerrar);
     for (var _d = 0; _d < array_length(cartas_ui.dig); _d++) sprite_delete(cartas_ui.dig[_d]);
     cartas_ui = undefined;
 };
@@ -1468,10 +1466,6 @@ mejoras_dibujar_ui = function() {
             texto_piezas(_piezas, _x + _cw / 2, _y + _ch + _lab_h / 2, _lsc, (_niv >= _max) ? _celeste : _dorado, 1, 6);
         }
     }
-
-    // ayuda abajo
-    draw_sprite_ext(cartas_ui.m_cerrar, 0, _gw / 2 + 2, _gh - 38 + 2, 2, 2, 0, c_black, 0.7);
-    draw_sprite_ext(cartas_ui.m_cerrar, 0, _gw / 2,     _gh - 38,     2, 2, 0, make_colour_rgb(190, 190, 200), 1);
 
     gpu_set_texfilter(_tf);
     draw_set_alpha(1);

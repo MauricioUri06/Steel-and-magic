@@ -13,7 +13,7 @@ event_inherited();
 nombre = "General Demonio";
 subtitulo = "Jefe del Acto III";
 intro_spr = spr_general_intro;   // ilustracion de la presentacion (o_intro_jefe)
-hp_max = 500;
+hp_max = 600;   // antes 500 (+20%)
 hp     = hp_max;
 radio  = 24;
 escala_sprite = 1.15;   // el sprite (96x80) es grande: un poco menos que la escala del jugador
