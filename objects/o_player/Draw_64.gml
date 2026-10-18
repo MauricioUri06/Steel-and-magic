@@ -107,6 +107,11 @@ draw_set_font(-1);
 draw_set_alpha(1);
 
 acto_dibujar();
+
+// Resultado de la carta Apuesta
+apuesta_dibujar();
+
+// Pantalla de subida de nivel: las cartas al centro y el boton Confirmar
 cartas_dibujar_ui();
 mejoras_dibujar_ui();
 pausa_dibujar_ui();

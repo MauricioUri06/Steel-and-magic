@@ -3,9 +3,6 @@ if (!menu_abierto) {
         global.meta_progreso.monedas_banco += 100;
         meta_guardar();
     }
-    if (debug_meta && keyboard_check_pressed(ord("M"))) {
-        meta_abrir_menu_muerte(25);
-    }
     exit;
 }
 

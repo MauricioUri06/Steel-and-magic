@@ -1,0 +1,16 @@
+STEEL AND MAGIC - MUSICA (primera version)
+
+Archivos .ogg (listos para importar a GameMaker; todos son loops perfectos):
+  mus_menu.ogg   Re menor, 66 bpm,  ~1:56  piano solo que va sumando cuerdas (calma antes de la tormenta)
+  mus_acto1.ogg  Mi menor, 156 bpm, ~1:38  cuerdas: piano, violines, violonchelo, guitarras, arpa
+  mus_acto2.ogg  Mi frigio, 150 bpm, ~1:42 guitarras electricas + percusion protagonista
+  mus_acto3.ogg  Do menor, 170 bpm, ~1:30  graves y sombrio: cuerdas graves, fagot, tuba, metales, coro, organo
+
+Carpeta midi/: las mismas piezas en MIDI (una pista por instrumento) para editarlas en cualquier DAW
+  (musica_acto3_parte2.mid lleva los instrumentos que no caben en los 16 canales del primer archivo).
+Carpeta fuente/: el codigo Python que genera todo (cambiar notas/volumenes y volver a renderizar).
+
+CREDITOS Y LICENCIA: los sonidos vienen del SoundFont "GeneralUser GS" v2.0.3 de S. Christian Collins (schristiancollins.com).
+Su licencia permite usarlo sin restriccion para crear musica, privada o comercial. El autor advierte que, por ser un banco
+personal publicado desde el 2000, no puede garantizar al 100% el origen de cada muestra; es un riesgo bajo pero conviene
+saberlo si el juego se va a vender. Se agradece mencionarlo en los creditos del juego.

@@ -4,6 +4,10 @@
 global.pausa = false;       // por si se vuelve aqui desde la pausa de un nivel
 pantalla = "principal";
 room_inicio = rm_acto_1_ruinas;   // room a la que va el boton Empezar
+meta_inicializar();
+musica_para_room(room);   // suena mus_menu (ver scr_musica)
+meta_fila_hover = -1;
+meta_volver_hover = false;
 
 // --- estado ---
 sel = -1;                 // boton seleccionado (-1 = ninguno)
@@ -52,6 +56,10 @@ anim_vel = 0.45;          // cuadros por paso de la transicion dorado <-> mecani
 volver_frame = 0;         // boton "Volver" de Tutorial y Mejoras
 volver_hover = false;
 volver_cy = 590;
+// Scroll del Tutorial (rueda del mouse, flechas o W/S): tut_scroll = desplazamiento actual, tut_scroll_obj = a donde va, tut_max = lo que sobra de contenido
+tut_scroll = 0;
+tut_scroll_obj = 0;
+tut_max = 0;      // lo calcula Draw_0 segun cuanto mide el texto
 
 // --- titulo: sprite s_menu_titulo (referencia directa, para que GameMaker no lo quite al compilar) ---
 spr_titulo = s_menu_titulo;
@@ -71,8 +79,8 @@ menu_accion = function(_a) {
     switch (_a) {
         case "empezar":  fade_saliendo = true; accion_pendiente = "empezar"; fade_vel = 1 / (2   * game_get_speed(gamespeed_fps)); break;   // 2 s hasta negro
         case "salir":    fade_saliendo = true; accion_pendiente = "salir";   fade_vel = 1 / (0.5 * game_get_speed(gamespeed_fps)); break;
-        case "tutorial": pantalla = "tutorial"; bloqueo = 15; break;
-        case "mejoras":  pantalla = "mejoras";  bloqueo = 15; break;
+        case "tutorial": pantalla = "tutorial"; bloqueo = 15; tut_scroll = 0; tut_scroll_obj = 0; break;
+        case "mejoras":  pantalla = "mejoras"; bloqueo = 15; break;
     }
 };
 

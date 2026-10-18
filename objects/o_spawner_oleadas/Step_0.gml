@@ -26,6 +26,7 @@ if (sala_destino != -1) {
 if (jefe_actual != noone && (!instance_exists(jefe_actual) || !jefe_actual.es_enemigo)) {
     jefe_actual = noone;
     if (jefe_sala != -1) {
+        sfx_jingle(sfx_jefe);   // fanfarria de jefe vencido (el jefe final no: ese activa la victoria de mas abajo)
         sala_destino = jefe_sala;
         jefe_sala = -1;
         trans_t = 0;
@@ -60,7 +61,7 @@ var _jefe = jefe_vivo();
 if (oleada >= total_oleadas) {
     if (array_length(cola) == 0 && !_jefe && !instance_exists(o_jefe_general)) {
         victoria = true;
-        instance_create_depth(0, 0, -12000, o_victoria);
+        instance_create_depth(0, 0, -12000, o_victoria);   // la fanfarria sfx_victoria suena en o_victoria
     }
     exit;
 }

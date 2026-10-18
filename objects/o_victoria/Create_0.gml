@@ -1,4 +1,5 @@
 // Pantalla final: usa el arte y el regreso al menu existentes.
+sfx_jingle(sfx_victoria);   // gran fanfarria de la victoria (ver scr_musica)
 t = 0;
 hover = false;
 boton_frame = 0;

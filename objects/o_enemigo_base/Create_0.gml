@@ -85,13 +85,44 @@ soltar_xp = function(_xp) {
 };
 
 // Mueve en un angulo; si no vuela, se desliza contra las paredes (cada eje por separado).
-mover = function(_dir, _vel) {
+// mover_crudo no se ve afectado por la lentitud (lo usa el empuje); mover si.
+mover_crudo = function(_dir, _vel) {
     var _dx = lengthdir_x(_vel, _dir);
     var _dy = lengthdir_y(_vel, _dir);
     if (volador || !place_meeting(x + _dx, y, o_solid)) x += _dx;
     if (volador || !place_meeting(x, y + _dy, o_solid)) y += _dy;
     x = clamp(x, radio, room_width - radio);
     y = clamp(y, radio, room_height - radio);
+};
+mover = function(_dir, _vel) {
+    if (lento_t > 0) _vel *= lento_f;
+    mover_crudo(_dir, _vel);
+};
+
+// ===== Estados que ponen las cartas del jugador (quemadura, lentitud, empuje) =====
+// Se actualizan en el Step de este objeto. Los jefes (pesado = true) no se empujan y se frenan la mitad.
+quemadura_t    = 0;    // pasos que le quedan ardiendo
+quemadura_dano = 1;    // dano de cada golpe de quemadura
+quemadura_tick = 0;    // pasos para el proximo golpe
+lento_t        = 0;    // pasos que le quedan ralentizado
+lento_f        = 1;    // multiplicador de velocidad mientras esta ralentizado (0.5 = la mitad)
+emp_dir        = 0;    // empuje: direccion y fuerza actual (px por paso, se apaga solo)
+emp_f          = 0;
+
+quemar = function(_pasos, _dano) {
+    quemadura_t    = max(quemadura_t, _pasos);
+    quemadura_dano = _dano;
+    if (quemadura_tick <= 0) quemadura_tick = 30;
+};
+ralentizar = function(_factor, _pasos) {
+    if (pesado) _factor = lerp(_factor, 1, 0.5);
+    lento_f = (lento_t > 0) ? min(lento_f, _factor) : _factor;
+    lento_t = max(lento_t, _pasos);
+};
+empujar = function(_dir, _fuerza) {
+    if (pesado) return;
+    emp_dir = _dir;
+    emp_f   = max(emp_f, _fuerza);
 };
 
 // IA del enemigo: cada padre la reemplaza. Por defecto solo persigue.

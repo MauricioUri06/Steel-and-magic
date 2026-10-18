@@ -22,6 +22,9 @@ pausa_actualizar();
 muerte_actualizar();   // P apretada 3 s = morir; si ya moriste maneja el fundido y la pantalla de HAS FALLADO
 cartas_actualizar();   // al subir de nivel pausa el juego y muestra las cartas para elegir una
 mejoras_actualizar();  // tecla M: menu con las mejoras (cartas) que ya tienes y su nivel
+// Musica: baja con la pausa, las cartas y el menu M; se apaga despues de morir (ver scr_musica)
+if (muerto) musica_volumen(0, 2000);
+else musica_volumen((global.pausa || cartas_abierto || mejoras_abierto) ? 0.3 : 1, 250);
 if (global.pausa || muerto || cartas_abierto || mejoras_abierto) exit;
 acto_actualizar();   // cartel "ACTO I/II/III" al entrar a cada room de acto
 
@@ -44,13 +47,14 @@ for (var _i = array_length(espejismos) - 1; _i >= 0; _i--) {
     espejismos[_i].vida -= 1;
     if (espejismos[_i].vida <= 0) array_delete(espejismos, _i, 1);
 }
+explosiones_actualizar();   // anillos de las balas explosivas y mensaje de la apuesta
 
 // ===== Nivel del dash segun las monedas =====
 if (debug_monedas && keyboard_check_pressed(ord("C"))) monedas += 5;   // solo para probar
 if (debug_mejoras) {                                                   // solo para probar
     if (keyboard_check_pressed(ord("1"))) mejora_subir("dash_cargas");
     if (keyboard_check_pressed(ord("2"))) mejora_subir("dash_recarga");
-    if (keyboard_check_pressed(ord("3"))) mejora_subir("tajos");
+    if (keyboard_check_pressed(ord("3"))) mejora_subir("doble_tajo");
 }
 if (debug_cartas) {                                                    // solo para probar
     if (keyboard_check_pressed(ord("X"))) ganar_xp(5);
@@ -138,7 +142,7 @@ if (state != "attack" && state != "dash" && state != "charge" && mouse_check_but
         atk_img_speed = 1;
         if (variable_struct_exists(proy, clase) && proy[$ clase].cadencia > 0) {
             var _natural = atk_timer;
-            atk_timer = max(1, round(game_get_speed(gamespeed_fps) / proy[$ clase].cadencia));
+            atk_timer = max(1, round(game_get_speed(gamespeed_fps) / (proy[$ clase].cadencia * cadencia_mult())));   // carta Cadencia (soldado)
             atk_img_speed = _natural / atk_timer;
         }
         // carta "Velocidad de ataque": el ataque dura menos y la animacion va mas rapido
@@ -153,26 +157,27 @@ if (state != "attack" && state != "dash" && state != "charge" && mouse_check_but
 // ===== Mago: mientras mantienes el clic carga la bola de fuego (mas grande y mas efectos); al soltar se lanza =====
 if (state == "charge") {
     var _fps = game_get_speed(gamespeed_fps);
+    var _cmax = mago_cfg.carga_max * carga_mult() * _fps;   // pasos para la carga completa (la carta Carga mas rapida lo acorta)
     var _ca = point_direction(x, y, mouse_x, mouse_y);   // sigue al cursor mientras carga
     if (_ca >= 315 || _ca < 45)  facing = "derecha";
     else if (_ca < 135)          facing = "arriba";
     else if (_ca < 225)          facing = "izquierda";
     else                         facing = "abajo";
     var _soltado = !mouse_check_button(mb_left);
-    if (!_soltado) carga = min(carga + 1, mago_cfg.carga_max * _fps);
-    carga_t    = carga / (mago_cfg.carga_max * _fps);
-    carga_esc  = lerp(mago_cfg.escala_min, mago_cfg.escala_max, carga_t) * escala_jugador;
+    if (!_soltado) carga = min(carga + 1, _cmax);
+    carga_t    = carga / _cmax;
+    carga_esc  = lerp(mago_cfg.escala_min, mago_cfg.escala_max * bola_mult(), carga_t) * escala_jugador;   // carta Bola maxima mas grande
     carga_dist = mago_cfg.dist + 12 * carga_esc;
     if (_soltado) {
         // lanzar la bola: tamano, dano y cantidad de efectos segun lo cargado
         instance_create_depth(x + lengthdir_x(carga_dist, _ca), y + lengthdir_y(carga_dist, _ca), depth - 1, mago_cfg.obj, {
             direccion: _ca,
-            dano: round(lerp(mago_cfg.dano_min, mago_cfg.dano_max, carga_t)),
+            dano: round(lerp(mago_cfg.dano_min, mago_cfg.dano_max, carga_t) * dano_mult()),
             escala: carga_esc,
             efectos: round(lerp(mago_cfg.efectos_min, mago_cfg.efectos_max, carga_t)),
             radio: mago_cfg.radio_por_escala * carga_esc,
             escala_efecto: lerp(mago_cfg.escala_efecto_min, mago_cfg.escala_efecto_max, carga_t) * escala_jugador,
-            dano_efecto: mago_cfg.dano_efecto
+            dano_efecto: mago_cfg.dano_efecto * dano_mult()
         });
         // la animacion de ataque sigue desde el cuadro del hechizo hasta el final
         var _as = spr[$ clase].ataque[$ facing];
@@ -243,6 +248,10 @@ y = clamp(y, 16, room_height - 16);
 // Un enemigo es cualquier instancia con  es_enemigo = true  (y  hp).  Si tiene un metodo  recibir_dano(_cantidad)  lo llama;
 // si no, le resta la cantidad a su  hp.  Cada enemigo recibe dano una sola vez por dash.
 if (_dejar_espejismo) {
+    // carta Fuego en el dash: deja llamas en el suelo cada 2 pasos (las mismas del mago, hacen dano a los enemigos)
+    if (mejoras.fuego_dash > 0 && (dash_timer mod 2) == 0) {
+        instance_create_depth(_gx, _gy + 14, depth + 2, o_efecto_mago, { dano: fuego_dash_dano * dano_mult(), escala: escala_jugador });
+    }
     var _lista = ds_list_create();
     var _nhit = collision_circle_list(x, y, dash_radio, all, false, true, _lista, false);
     for (var _k = 0; _k < _nhit; _k++) {
@@ -250,8 +259,9 @@ if (_dejar_espejismo) {
         if (!variable_instance_exists(_en, "es_enemigo") || !_en.es_enemigo) continue;
         if (variable_struct_exists(dash_golpeados, string(_en))) continue;
         dash_golpeados[$ string(_en)] = true;
-        if (variable_instance_exists(_en, "recibir_dano")) _en.recibir_dano(_dn.dano);
-        else if (variable_instance_exists(_en, "hp")) _en.hp -= _dn.dano;
+        if (variable_instance_exists(_en, "recibir_dano")) _en.recibir_dano(_dn.dano * dano_mult());
+        else if (variable_instance_exists(_en, "hp")) _en.hp -= _dn.dano * dano_mult();
+        golpe_extra(_en, dash_dir);   // carta Empuje
     }
     ds_list_destroy(_lista);
 }
@@ -293,12 +303,14 @@ if (proy_pendiente) {
             proy_pendiente = false;
             var _pa = point_direction(x, y, mouse_x, mouse_y);
             // el caballero lanza 1, 2 o 3 tajos (en triangulo) segun sus mejoras; las demas clases, uno
-            var _forma = (clase == "cab") ? tajos_formacion[mejoras.tajos] : [[_pd.dist, 0, 0]];
+            var _forma = formacion_ataque(clase, _pd);
             for (var _j = 0; _j < array_length(_forma); _j++) {
                 var _f = _forma[_j];
                 var _px = x + lengthdir_x(_f[0], _pa) + lengthdir_x(_f[1], _pa + 90);
                 var _py = y + lengthdir_y(_f[0], _pa) + lengthdir_y(_f[1], _pa + 90);
-                instance_create_depth(_px, _py, depth - 1, _pd.obj, { direccion: _pa + _f[2], dano: _pd.dano, escala: escala_jugador * _pd.escala });
+                var _op = { direccion: _pa + _f[2], dano: _pd.dano * dano_mult(), escala: escala_jugador * _pd.escala };
+                if (clase == "cab") _op.alcance = alcance_tajo();   // carta Tajo mas largo
+                instance_create_depth(_px, _py, depth - 1, _pd.obj, _op);
             }
         }
     }

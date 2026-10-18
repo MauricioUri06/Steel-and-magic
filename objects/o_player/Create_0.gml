@@ -163,14 +163,33 @@ carga_dist = 0;   // distancia actual de la bola al jugador
 // Para darle una al jugador:  o_player.mejora_subir("dash_cargas");   (devuelve false si ya esta al maximo)
 // Mientras debug_mejoras sea true:  tecla 1 = +1 carga de dash | 2 = dash recarga mas rapido | 3 = un tajo mas del caballero
 debug_mejoras = true;
-mejoras     = { dash_cargas: 0, dash_recarga: 0, tajos: 0, curacion: 0, armadura: 0, vel_ataque: 0 };
-mejoras_max = { dash_cargas: 2, dash_recarga: 1, tajos: 2, curacion: 3, armadura: 3, vel_ataque: 3 };
+// Cada carta tiene su id aqui (ver cartas_def mas abajo): el nivel actual en mejoras y el maximo en mejoras_max.
+mejoras = {
+    curacion: 0, armadura: 0, vel_ataque: 0,                            // generales
+    dash_cargas: 0, dash_recarga: 0,                                    // dash
+    doble_tajo: 0, tajo_triangular: 0, tajo_largo: 0,                   // caballero
+    cadencia: 0, balas_abanico: 0, balas_explosivas: 0,                 // soldado
+    carga_rapida: 0, bola_grande: 0, quemadura_lenta: 0,                // mago
+    balas_incendiarias: 0, fuego_dash: 0,                               // hibridas
+    empuje: 0, apuesta: 0, canon_cristal: 0                             // empuje y riesgo / recompensa
+};
+mejoras_max = {
+    curacion: 3, armadura: 3, vel_ataque: 3,
+    dash_cargas: 2, dash_recarga: 1,
+    doble_tajo: 1, tajo_triangular: 1, tajo_largo: 1,
+    cadencia: 1, balas_abanico: 2, balas_explosivas: 1,
+    carga_rapida: 2, bola_grande: 1, quemadura_lenta: 1,
+    balas_incendiarias: 1, fuego_dash: 1,
+    empuje: 2, apuesta: 1, canon_cristal: 1
+};
 
 mejora_subir = function(_id) {
     if (!variable_struct_exists(mejoras, _id)) return false;
     if (mejoras[$ _id] >= mejoras_max[$ _id]) return false;
     mejoras[$ _id] += 1;
     if (_id == "dash_cargas") dash_cargas += 1;   // la carga nueva se regala llena
+    if (_id == "canon_cristal") { hp_max = max(1, round(hp_max * canon_vida)); hp = min(hp, hp_max); }   // el riesgo: menos vida maxima
+    if (_id == "apuesta") apostar();                                                                      // tira los dados al elegirla
     return true;
 };
 
@@ -179,8 +198,8 @@ dash_recarga_mejora = 0.25;   // cada nivel de "dash recarga" baja el tiempo de 
 dash_cargas_max = dash_niveles[0].cargas;
 dash_cd         = dash_niveles[0].cd;
 
-// Tajos del caballero segun mejoras.tajos (0, 1 o 2): cada tajo = [adelante (px), lateral (px), desvio de angulo]
-// 1 tajo: al frente | 2 tajos: lado a lado | 3 tajos: en triangulo (uno adelante y dos abiertos a los lados)
+// Tajos del caballero segun mejoras.doble_tajo + mejoras.tajo_triangular (0, 1 o 2): cada tajo = [adelante (px), lateral (px), desvio de angulo]
+// 1 tajo: al frente | 2 tajos: lado a lado (carta Doble tajo) | 3 tajos: en triangulo (ademas, la carta Tajo triangular)
 tajos_formacion = [
     [ [26, 0, 0] ],
     [ [26, -16, -8], [26, 16, 8] ],
@@ -313,6 +332,7 @@ pausa_actualizar = function() {
             ini_write_string("arranque", "destino", "menu");
             ini_write_string("arranque", "pantalla", p_menu_pantalla);
             ini_close();
+            audio_stop_all();   // si sonaba un jingle (por ejemplo el de muerte), se corta: la musica del menu arranca limpia
             game_restart();
         }
     }
@@ -389,6 +409,7 @@ pausa_dibujar_fondo = function() {
         draw_set_alpha(1);
         draw_set_color(c_white);
     }
+    if (muerto) muerte_dibujar_anim();   // animacion de caida encima de la foto (la foto se toma sin el jugador)
 };
 
 // Draw GUI, al FINAL: titulo y botones de la pausa + fundidos (entrada al nivel y salida al menu)
@@ -436,11 +457,14 @@ pausa_dibujar_ui = function() {
 // - Al morir: se congela todo lo demas, la pantalla se pone negra lentamente y aparece "HAS FALLADO" en rojo con dos botones:
 //   "Mejoras" y "Menu principal". Ambos vuelven al menu con game_restart() (igual que la pausa); "Mejoras" deja el menu abierto en esa pantalla.
 // - Para matar al jugador desde otro objeto:  o_player.morir();
-debug_morir     = true;
+debug_morir     = false;   // true: mantener P 3 s mata al jugador (solo para probar)
 morir_seg       = 3;      // segundos que hay que mantener P
 morir_t         = 0;      // pasos que lleva apretada
 muerto          = false;
 duracion_muerte = 3;      // segundos hasta que la pantalla queda negra
+muerte_anim_seg = 1.0;    // segundos que dura la animacion de caida (s_muerte_jugador, 6 cuadros)
+muerte_anim_t   = 0;      // pasos desde que se tomo la foto: avanza la animacion
+muerte_captura_pend = false;   // true = falta tomar la foto (se toma un cuadro despues de morir, con el jugador ya oculto)
 alpha_muerte    = 0;      // 0..1: que tan negra esta la pantalla
 m_ui_t          = 0;      // 0..1: aparicion del texto y de los botones
 m_bloqueo       = 40;     // pasos, despues de aparecer, en los que se ignoran clics y Enter (por si seguias atacando)
@@ -458,7 +482,34 @@ m_cy = function(_i) {
     return display_get_gui_height() / 2 + 40 + _i * (p_h + p_sep);
 };
 
-// Mata al jugador: foto del ultimo cuadro, congela todo lo demas y empieza el fundido a negro.
+// Dibuja la animacion de muerte encima de la foto congelada (en el Draw GUI). Se ancla a los pies del jugador y sigue a la camara.
+// Los cuadros se reparten en muerte_anim_seg segundos y el ultimo se queda quieto (el jugador en el suelo).
+muerte_dibujar_anim = function() {
+    if (!muerto || muerte_captura_pend || !sprite_exists(spr_captura)) return;
+    var _n = sprite_get_number(s_muerte_jugador);
+    var _f = clamp(floor(muerte_anim_t / (muerte_anim_seg * game_get_speed(gamespeed_fps)) * _n), 0, _n - 1);
+    // la foto es la pantalla completa estirada a la GUI: se pasa de coordenadas del mundo a las de la foto
+    var _vx = 0, _vy = 0, _vw = room_width, _vh = room_height;
+    if (view_enabled && view_visible[0]) {
+        var _cam = view_camera[0];
+        _vx = camera_get_view_x(_cam);
+        _vy = camera_get_view_y(_cam);
+        _vw = camera_get_view_width(_cam);
+        _vh = camera_get_view_height(_cam);
+    }
+    var _kx = display_get_gui_width() / _vw;
+    var _ky = display_get_gui_height() / _vh;
+    // el sprite mide 32x32 con los pies en la fila 30: se alinea con los pies del jugador vivo (x, y + 14)
+    var _s = escala_jugador;
+    var _gx = (x - 16 * _s - _vx) * _kx;
+    var _gy = (y + 14 - 30 * _s - _vy) * _ky;
+    var _tf = gpu_get_texfilter();
+    gpu_set_texfilter(false);
+    draw_sprite_ext(s_muerte_jugador, _f, _gx, _gy, _s * _kx, _s * _ky, 0, c_white, 1);
+    gpu_set_texfilter(_tf);
+};
+
+// Mata al jugador: lo oculta, un cuadro despues toma la foto (ya sin el jugador), congela todo lo demas y reproduce la animacion de caida.
 morir = function() {
     if (muerto) return;
     muerto = true;
@@ -471,8 +522,9 @@ morir = function() {
     m_mx = device_mouse_x_to_gui(0);
     m_my = device_mouse_y_to_gui(0);
     image_speed = 0;
-    spr_captura = sprite_create_from_surface(application_surface, 0, 0, surface_get_width(application_surface), surface_get_height(application_surface), false, false, 0, 0);
-    instance_deactivate_all(true);   // igual que la pausa: el jugador sigue activo, lo demas queda congelado
+    muerte_anim_t = 0;
+    muerte_captura_pend = true;   // Draw_0 ya no dibuja al jugador; la foto y el congelado ocurren en muerte_actualizar, en el siguiente Step
+    sfx_jingle(sfx_muerte);       // violin triste; la musica del acto se calla (ver scr_musica)
     show_debug_message("[muerte] el jugador murio");
 };
 
@@ -492,8 +544,20 @@ muerte_actualizar = function() {
         return;
     }
 
-    // muerto: primero la pantalla se pone negra; despues aparecen el texto y los botones
-    if (alpha_muerte < 1) alpha_muerte = min(1, alpha_muerte + 1 / (duracion_muerte * _fps));
+    // el cuadro anterior ya se dibujo sin el jugador: foto del juego y congelado (igual que la pausa: el jugador sigue activo, lo demas queda congelado)
+    if (muerte_captura_pend) {
+        muerte_captura_pend = false;
+        if (sprite_exists(spr_captura)) sprite_delete(spr_captura);
+        spr_captura = sprite_create_from_surface(application_surface, 0, 0, surface_get_width(application_surface), surface_get_height(application_surface), false, false, 0, 0);
+        instance_deactivate_all(true);
+        return;
+    }
+
+    // muerto: se reproduce la animacion de caida (el fundido a negro empieza cuando va por el 60%); despues aparecen el texto y los botones
+    muerte_anim_t += 1;
+    var _espera_fundido = round(muerte_anim_seg * 0.6 * _fps);
+    if (muerte_anim_t < _espera_fundido) { /* solo animacion */ }
+    else if (alpha_muerte < 1) alpha_muerte = min(1, alpha_muerte + 1 / (duracion_muerte * _fps));
     else if (m_ui_t < 1) m_ui_t = min(1, m_ui_t + 1 / _fps);
     else if (m_bloqueo > 0) m_bloqueo -= 1;
 
@@ -585,6 +649,7 @@ acto_actualizar = function() {
     if (room != acto_room) {
         acto_room = room;
         acto_t = 0;
+        musica_para_room(room);   // cada acto tiene su cancion (ver scr_musica)
         if (room == rm_acto_1_ruinas)         acto_num = 1;
         else if (room == rm_acto_2_oxidado)   acto_num = 2;
         else if (room == rm_acto_3_fortaleza) acto_num = 3;
@@ -640,7 +705,7 @@ if (file_exists("arranque.ini")) {
 // - Cada nivel pide mas experiencia que el anterior:  xp_necesaria(nivel) = xp_base * xp_crece ^ (nivel - 1)
 // - Para sumar una carta nueva: agregarla a cartas_def (sprite + id de mejora), a mejoras / mejoras_max (mas arriba) y darle su efecto.
 // - Para que los enemigos le hagan dano al jugador:   o_player.recibir_dano(cantidad);   (la armadura lo reduce y el dash lo evita)
-debug_cartas = true;     // true: X = +5 de experiencia, K = cuenta un enemigo derrotado (+1 xp), H = recibes 5 de dano. Ponlo en false cuando haya enemigos.
+debug_cartas = false;    // true: X = +5 de experiencia, K = cuenta un enemigo derrotado (+1 xp), H = recibes 5 de dano. Ponlo en false cuando haya enemigos.
 nivel        = 1;
 nivel_max    = 12;       // al llegar aqui ya no se sube mas (la experiencia deja de sumar)
 xp           = 0;
@@ -649,6 +714,14 @@ xp_crece     = 1.25;     // cada nivel pide este numero de veces mas que el ante
 xp_necesaria = function(_n) { return round(xp_base * power(xp_crece, _n - 1)); };
 xp_sig       = xp_necesaria(1);   // experiencia que falta llenar para el siguiente nivel
 cartas_pendientes   = 0;  // niveles ganados que todavia no eligieron carta
+sin_cartas          = false;   // true para siempre (hasta reiniciar) cuando se derroto al ultimo jefe: ya no se ofrecen mas cartas
+
+// Despues de vencer al jefe final (o_spawner_oleadas.victoria) ya no se ofrecen mejoras temporales. Una vez que se ve la victoria
+// queda anotado en sin_cartas (el spawner se desactiva mientras hay pausa o menus, y asi no se pierde el aviso).
+cartas_bloqueadas = function() {
+    if (!sin_cartas && instance_exists(o_spawner_oleadas) && o_spawner_oleadas.victoria) sin_cartas = true;
+    return sin_cartas;
+};
 enemigos_derrotados = 0;
 
 // Efectos de las cartas (por nivel de la carta; cada carta llega hasta el nivel 3)
@@ -670,7 +743,7 @@ hud_estadisticas_arma = function() {
     var _pasos, _dano;
     if (clase == "mago") {
         _dano = round(lerp(mago_cfg.dano_min, mago_cfg.dano_max,
-            (state == "charge" || state == "attack") ? carga_t : 0));
+            (state == "charge" || state == "attack") ? carga_t : 0) * dano_mult());
         _pasos = max(1, round(mago_cfg.recarga * _fps / _vel));
     } else {
         var _arma = proy[$ clase];
@@ -678,11 +751,143 @@ hud_estadisticas_arma = function() {
         var _spd = sprite_get_speed(_spr);
         if (sprite_get_speed_type(_spr) == spritespeed_framespersecond) _spd /= _fps;
         _pasos = ceil(sprite_get_number(_spr) / max(_spd, 0.01));
-        if (_arma.cadencia > 0) _pasos = max(1, round(_fps / _arma.cadencia));
+        if (_arma.cadencia > 0) _pasos = max(1, round(_fps / (_arma.cadencia * cadencia_mult())));   // carta Cadencia
         if (_vel > 1) _pasos = max(1, round(_pasos / _vel));
-        _dano = _arma.dano;
+        _dano = _arma.dano * dano_mult();   // carta Canon de cristal
     }
     return { dano: _dano, ataques_segundo: _fps / _pasos };
+};
+
+// ===== Cartas nuevas: valores (se cambian aqui para balancear) =====
+tajo_alcance           = 40;      // alcance base del tajo del caballero (px). Tajo mas largo lo multiplica
+tajo_largo_mult        = 1.75;    // Tajo mas largo: el alcance se multiplica por esto
+cadencia_por_nivel     = 0.30;    // Cadencia (soldado): +30% de disparos por segundo
+abanico_balas          = [1, 3, 5];   // Balas en abanico: balas por disparo segun el nivel de la carta (0, 1, 2)
+abanico_grados         = 9;       // separacion entre las balas del abanico (grados)
+carga_rapida_por_nivel = 0.25;    // Carga mas rapida (mago): la carga maxima tarda 25% menos por nivel
+bola_grande_mult       = 1.5;     // Bola maxima mas grande (mago): el tamano maximo se multiplica por esto
+empuje_por_nivel       = 4;       // Empuje: fuerza del empujon por nivel (px por paso, se apaga solo): ~20 px el nivel 1 y ~40 px el 2
+quemadura_seg          = 3;       // Balas incendiarias: segundos que arde un enemigo
+quemadura_dano         = 1;       // dano de cada golpe de quemadura (2 golpes por segundo)
+lento_factor           = 0.5;     // Quemadura ralentizante: velocidad de los enemigos que arden o pisan fuego (0.5 = la mitad)
+explosion_radio        = 38;      // Balas explosivas: radio de la explosion (px)
+explosion_dano_pct     = 0.5;     // ...y dano de la explosion respecto al de la bala (a los demas enemigos cercanos)
+fuego_dash_dano        = 1;       // Fuego en el dash: dano por pulso de cada llama que deja el dash
+canon_dano_mult        = 1.6;     // Canon de cristal: el dano que haces se multiplica por esto...
+canon_vida             = 0.6;     // ...pero la vida maxima baja a este %
+apuesta_prob           = 0.5;     // Apuesta: probabilidad de ganar
+apuesta_premio         = 2;       // ...si ganas: cartas extra para elegir
+apuesta_costo          = 0.4;     // ...si pierdes: pierdes este % de la vida maxima (nunca te mata, queda minimo 1)
+
+dano_mult     = function() { return (mejoras.canon_cristal > 0) ? canon_dano_mult : 1; };
+cadencia_mult = function() { return 1 + cadencia_por_nivel * mejoras.cadencia; };
+carga_mult    = function() { return max(0.2, 1 - carga_rapida_por_nivel * mejoras.carga_rapida); };   // < 1 = carga mas rapido
+bola_mult     = function() { return 1 + (bola_grande_mult - 1) * mejoras.bola_grande; };
+alcance_tajo  = function() { return tajo_alcance * (1 + (tajo_largo_mult - 1) * mejoras.tajo_largo); };
+
+// Que sale en cada ataque: el caballero 1, 2 o 3 tajos | el soldado 1, 3 o 5 balas en abanico | el mago una bola (no usa esto)
+// Cada elemento = [adelante (px), lateral (px), desvio de angulo]
+formacion_ataque = function(_clase, _pd) {
+    if (_clase == "cab") return tajos_formacion[mejoras.doble_tajo + mejoras.tajo_triangular];
+    if (_clase == "sol") {
+        var _n = abanico_balas[mejoras.balas_abanico];
+        var _f = [];
+        for (var _i = 0; _i < _n; _i++) array_push(_f, [_pd.dist, 0, (_i - (_n - 1) / 2) * abanico_grados]);
+        return _f;
+    }
+    return [[_pd.dist, 0, 0]];
+};
+
+// Efectos de las cartas cuando algo del jugador golpea a un enemigo (_dir = hacia donde va el golpe). Lo llaman el dash y los proyectiles.
+golpe_extra = function(_en, _dir) {
+    if (!instance_exists(_en)) return;
+    if (mejoras.empuje > 0 && variable_instance_exists(_en, "empujar")) _en.empujar(_dir, empuje_por_nivel * mejoras.empuje);
+};
+
+// Golpe de una bala del soldado: empuje + quemadura (Balas incendiarias) + explosion (Balas explosivas)
+golpe_bala = function(_en, _dir, _x, _y, _dano) {
+    if (!instance_exists(_en)) return;
+    golpe_extra(_en, _dir);
+    if (mejoras.balas_incendiarias > 0) quemar_enemigo(_en);
+    if (mejoras.balas_explosivas > 0) explotar(_x, _y, _dano * explosion_dano_pct, _en);
+};
+
+// Prende fuego al enemigo; con la carta Quemadura ralentizante tambien lo frena mientras arde
+quemar_enemigo = function(_en) {
+    if (!instance_exists(_en)) return;
+    var _pasos = round(quemadura_seg * game_get_speed(gamespeed_fps));
+    if (variable_instance_exists(_en, "quemar")) _en.quemar(_pasos, quemadura_dano * dano_mult());
+    if (mejoras.quemadura_lenta > 0 && variable_instance_exists(_en, "ralentizar")) _en.ralentizar(lento_factor, _pasos);
+};
+
+// Explosion de las Balas explosivas: dano en area a los enemigos cercanos (menos _excluir, que ya recibio el golpe de la bala)
+explosiones = [];   // anillos que se dibujan: { x, y, r, vida }
+explotar = function(_x, _y, _dano, _excluir) {
+    array_push(explosiones, { x: _x, y: _y, r: explosion_radio, vida: 14 });
+    var _lista = ds_list_create();
+    var _n = collision_circle_list(_x, _y, explosion_radio, all, false, true, _lista, false);
+    for (var _k = 0; _k < _n; _k++) {
+        var _en = _lista[| _k];
+        if (_en == _excluir) continue;
+        if (!variable_instance_exists(_en, "es_enemigo") || !_en.es_enemigo) continue;
+        if (variable_instance_exists(_en, "recibir_dano")) _en.recibir_dano(_dano);
+        else if (variable_instance_exists(_en, "hp")) _en.hp -= _dano;
+        golpe_extra(_en, point_direction(_x, _y, _en.x, _en.y));
+    }
+    ds_list_destroy(_lista);
+};
+explosiones_actualizar = function() {
+    for (var _i = array_length(explosiones) - 1; _i >= 0; _i--) {
+        explosiones[_i].vida -= 1;
+        if (explosiones[_i].vida <= 0) array_delete(explosiones, _i, 1);
+    }
+    if (apuesta_msg_t > 0) apuesta_msg_t -= 1;
+};
+explosiones_dibujar = function() {   // se llama desde Draw_0
+    for (var _i = 0; _i < array_length(explosiones); _i++) {
+        var _e = explosiones[_i];
+        var _t = _e.vida / 14;                        // 1 -> 0
+        var _r = _e.r * (1.15 - 0.5 * _t);            // el anillo crece al desvanecerse
+        draw_set_alpha(0.5 * _t);
+        draw_set_color(make_colour_rgb(255, 170, 60));
+        draw_circle(_e.x, _e.y, _r, false);
+        draw_set_alpha(0.9 * _t);
+        draw_set_color(make_colour_rgb(255, 240, 180));
+        draw_circle(_e.x, _e.y, _r, true);
+    }
+    draw_set_alpha(1);
+    draw_set_color(c_white);
+};
+
+// Apuesta: al elegirla se tiran los dados. Ganas cartas extra o pierdes un poco de vida.
+apuesta_msg   = "";
+apuesta_msg_t = 0;      // pasos que se ve el mensaje del resultado
+apuesta_gano  = false;
+apostar = function() {
+    if (random(1) < apuesta_prob) {
+        cartas_pendientes += apuesta_premio;
+        apuesta_msg = "APUESTA GANADA: +" + string(apuesta_premio) + " cartas";
+        apuesta_gano = true;
+    } else {
+        hp = max(1, hp - hp_max * apuesta_costo);
+        apuesta_msg = "APUESTA PERDIDA: -" + string(round(apuesta_costo * 100)) + "% de vida";
+        apuesta_gano = false;
+    }
+    apuesta_msg_t = 150;
+    show_debug_message("[apuesta] " + apuesta_msg);
+};
+apuesta_dibujar = function() {   // se llama desde Draw_64
+    if (apuesta_msg_t <= 0 || muerto || cartas_abierto || mejoras_abierto) return;
+    var _gw = display_get_gui_width();
+    draw_set_halign(fa_center);
+    draw_set_alpha(clamp(apuesta_msg_t / 30, 0, 1));
+    draw_set_color(c_black);
+    draw_text_transformed(_gw / 2 + 2, 152, apuesta_msg, 2, 2, 0);
+    draw_set_color(apuesta_gano ? make_colour_rgb(255, 214, 102) : make_colour_rgb(255, 90, 90));
+    draw_text_transformed(_gw / 2, 150, apuesta_msg, 2, 2, 0);
+    draw_set_halign(fa_left);
+    draw_set_alpha(1);
+    draw_set_color(c_white);
 };
 
 curar = function(_cantidad) {
@@ -702,7 +907,7 @@ ganar_xp = function(_cantidad) {
         xp -= xp_sig;
         nivel += 1;
         xp_sig = xp_necesaria(nivel);
-        cartas_pendientes += 1;
+        if (!cartas_bloqueadas()) cartas_pendientes += 1;   // tras vencer al jefe final se sigue subiendo de nivel, pero sin cartas
         show_debug_message("[xp] subiste al nivel " + string(nivel) + " (siguiente nivel: " + string(xp_sig) + " xp)");
     }
     if (nivel >= nivel_max) xp = 0;
@@ -722,10 +927,34 @@ enemigo_derrotado = function(_xp = 1) {
 
 // Cartas disponibles: sprite (190x288, ya trae el texto dibujado) y la mejora que dan.
 // Referenciados por nombre para que GameMaker no los quite al compilar.
+// rareza: 0 comun | 1 rara | 2 epica (cartas_peso_rareza = probabilidad relativa de salir) | req = carta que hay que tener antes ("" = ninguna)
+cartas_peso_rareza = [60, 30, 10];
 cartas_def = [
-    { mejora: "curacion",   spr: s_carta_curacion,          nombre: "Curacion" },
-    { mejora: "armadura",   spr: s_carta_armadura,          nombre: "Armadura" },
-    { mejora: "vel_ataque", spr: s_carta_velocidad_ataque,  nombre: "Velocidad de ataque" }
+    // generales
+    { mejora: "curacion",           spr: s_carta_curacion,              nombre: "Curacion",               rareza: 0, req: "" },
+    { mejora: "armadura",           spr: s_carta_armadura,              nombre: "Armadura",               rareza: 0, req: "" },
+    { mejora: "vel_ataque",         spr: s_carta_velocidad_ataque,      nombre: "Velocidad de ataque",    rareza: 0, req: "" },
+    // dash
+    { mejora: "dash_recarga",       spr: s_carta_recarga_dash,          nombre: "Recarga de dash",        rareza: 0, req: "" },
+    { mejora: "dash_cargas",        spr: s_carta_carga_dash,            nombre: "Carga de dash",          rareza: 1, req: "" },
+    { mejora: "fuego_dash",         spr: s_carta_fuego_dash,            nombre: "Fuego en el dash",       rareza: 2, req: "" },
+    // caballero
+    { mejora: "tajo_largo",         spr: s_carta_tajo_largo,            nombre: "Tajo mas largo",         rareza: 0, req: "" },
+    { mejora: "doble_tajo",         spr: s_carta_doble_tajo,            nombre: "Doble tajo",             rareza: 1, req: "" },
+    { mejora: "tajo_triangular",    spr: s_carta_tajo_triangular,       nombre: "Tajo triangular",        rareza: 2, req: "doble_tajo" },
+    // soldado
+    { mejora: "cadencia",           spr: s_carta_cadencia,              nombre: "Cadencia",               rareza: 0, req: "" },
+    { mejora: "balas_abanico",      spr: s_carta_balas_abanico,         nombre: "Balas en abanico",       rareza: 1, req: "" },
+    { mejora: "balas_explosivas",   spr: s_carta_balas_explosivas,      nombre: "Balas explosivas",       rareza: 2, req: "" },
+    // mago
+    { mejora: "carga_rapida",       spr: s_carta_carga_rapida,          nombre: "Carga mas rapida",       rareza: 0, req: "" },
+    { mejora: "bola_grande",        spr: s_carta_bola_grande,           nombre: "Bola maxima mas grande", rareza: 1, req: "" },
+    { mejora: "quemadura_lenta",    spr: s_carta_quemadura_ralentizante, nombre: "Quemadura ralentizante", rareza: 1, req: "" },
+    // hibridas y otras
+    { mejora: "balas_incendiarias", spr: s_carta_balas_incendiarias,    nombre: "Balas incendiarias",     rareza: 2, req: "" },
+    { mejora: "empuje",             spr: s_carta_empuje,                nombre: "Empuje",                 rareza: 1, req: "" },
+    { mejora: "apuesta",            spr: s_carta_apuesta,               nombre: "Apuesta",                rareza: 1, req: "" },
+    { mejora: "canon_cristal",      spr: s_carta_canon_cristal,         nombre: "Canon de cristal",       rareza: 2, req: "" }
 ];
 cartas_max_opciones = 3;   // cuantas cartas se ofrecen cada vez
 cartas_opciones = [];      // indices de cartas_def ofrecidos ahora
@@ -801,22 +1030,30 @@ cartas_liberar = function() {
     cartas_ui = undefined;
 };
 
-// Cartas que se pueden ofrecer: las que no estan al maximo, mezcladas; se toman hasta cartas_max_opciones
+// Cartas que se pueden ofrecer: las que no estan al maximo y cuyo requisito ya se cumple. Se sortean hasta cartas_max_opciones
+// distintas, y las comunes salen mas seguido que las raras y las epicas (cartas_peso_rareza).
 cartas_elegir_opciones = function() {
     var _disp = [];
     for (var _i = 0; _i < array_length(cartas_def); _i++) {
-        var _m = cartas_def[_i].mejora;
-        if (mejoras[$ _m] < mejoras_max[$ _m]) array_push(_disp, _i);
-    }
-    for (var _i = array_length(_disp) - 1; _i > 0; _i--) {
-        var _j = irandom(_i);
-        var _tmp = _disp[_i];
-        _disp[_i] = _disp[_j];
-        _disp[_j] = _tmp;
+        var _c = cartas_def[_i];
+        if (mejoras[$ _c.mejora] >= mejoras_max[$ _c.mejora]) continue;
+        if (_c.req != "" && mejoras[$ _c.req] <= 0) continue;
+        array_push(_disp, _i);
     }
     var _res = [];
-    var _n = min(cartas_max_opciones, array_length(_disp));
-    for (var _i = 0; _i < _n; _i++) array_push(_res, _disp[_i]);
+    while (array_length(_res) < cartas_max_opciones && array_length(_disp) > 0) {
+        var _tot = 0;
+        for (var _k = 0; _k < array_length(_disp); _k++) _tot += cartas_peso_rareza[cartas_def[_disp[_k]].rareza];
+        var _r = random(_tot);
+        var _acc = 0;
+        var _pick = array_length(_disp) - 1;
+        for (var _k = 0; _k < array_length(_disp); _k++) {
+            _acc += cartas_peso_rareza[cartas_def[_disp[_k]].rareza];
+            if (_r < _acc) { _pick = _k; break; }
+        }
+        array_push(_res, _disp[_pick]);
+        array_delete(_disp, _pick, 1);
+    }
     return _res;
 };
 
@@ -842,6 +1079,7 @@ cartas_actualizar = function() {
     var _fps = game_get_speed(gamespeed_fps);
 
     if (!cartas_abierto) {
+        if (cartas_bloqueadas()) { cartas_pendientes = 0; return; }   // jefe final vencido: se descartan las cartas que faltaban
         if (cartas_pendientes <= 0 || global.pausa || muerto || p_saliendo || mejoras_abierto || alpha_entrada > 0.3) return;
         var _op = cartas_elegir_opciones();
         if (array_length(_op) == 0) { cartas_pendientes = 0; return; }   // ya tienes todas las cartas al maximo
@@ -1062,16 +1300,35 @@ mejoras_dibujar_ui = function() {
     } else {
         var _cw0 = sprite_get_width(s_carta_curacion);
         var _ch0 = sprite_get_height(s_carta_curacion);
-        var _por_fila = min(_n, 6);
+        var _gap = 14;
+        var _hb = _gh * 0.70;   // alto disponible para las cartas (del 20% al 90% de la pantalla)
+        var _wb = _gw * 0.94;   // ancho disponible
+        // Se prueba cada cantidad de columnas y se queda la que deja las cartas mas grandes (pocas cartas: una fila; muchas: varias filas parejas).
+        // El texto "Nivel x/y" va x2 si las cartas son grandes y x1 si son chicas, asi nunca se pisa con el de la carta de al lado.
+        var _mejor = { esc: 0, cols: min(_n, 10), lsc: 1, lab: 30 };
+        for (var _cc = 1; _cc <= _n; _cc++) {
+            var _rr = ceil(_n / _cc);
+            var _ew = (_wb - (_cc - 1) * _gap) / (_cc * _cw0);
+            var _e = min(1.5, _ew, (_hb - _rr * 44 - (_rr - 1) * _gap) / (_rr * _ch0));   // con texto x2
+            var _l = 2;
+            var _lh = 44;
+            if (_e < 1) {                                                                  // si no cabe, texto x1
+                _e = min(1.5, _ew, (_hb - _rr * 30 - (_rr - 1) * _gap) / (_rr * _ch0));
+                _l = 1;
+                _lh = 30;
+            }
+            _e = (_e >= 1) ? floor(_e * 4) / 4 : floor(_e * 20) / 20;   // >= 1: de a cuartos (nitido) | < 1: de a 0.05 (suavizado)
+            if (_e >= _mejor.esc) _mejor = { esc: _e, cols: _cc, lsc: _l, lab: _lh };
+        }
+        var _esc = max(0.25, _mejor.esc);
+        var _por_fila = _mejor.cols;
         var _filas = ceil(_n / _por_fila);
-        var _gap = 20;
-        var _lab_h = 44;   // alto reservado para "Nivel x/y" debajo de cada carta
-        var _esc = min(1.5, (_gw * 0.92 - (_por_fila - 1) * _gap) / (_por_fila * _cw0), (_gh * 0.68 - _filas * _lab_h - (_filas - 1) * _gap) / (_filas * _ch0));
-        _esc = max(0.25, floor(_esc * 4) / 4);
+        var _lsc = _mejor.lsc;
+        var _lab_h = _mejor.lab;   // alto reservado para "Nivel x/y" debajo de cada carta
         var _cw = _cw0 * _esc;
         var _ch = _ch0 * _esc;
         var _bloque_h = _filas * (_ch + _lab_h) + (_filas - 1) * _gap;
-        var _top = _gh * 0.20 + (_gh * 0.72 - _bloque_h) / 2;
+        var _top = _gh * 0.20 + (_hb - _bloque_h) / 2;
         for (var _k = 0; _k < _n; _k++) {
             var _def = cartas_def[_lista[_k]];
             var _fila = _k div _por_fila;
@@ -1079,12 +1336,14 @@ mejoras_dibujar_ui = function() {
             var _en_fila = min(_por_fila, _n - _fila * _por_fila);
             var _x = (_gw - (_en_fila * _cw + (_en_fila - 1) * _gap)) / 2 + _col * (_cw + _gap);
             var _y = _top + _fila * (_ch + _lab_h + _gap);
+            gpu_set_texfilter(_esc < 1);   // cartas achicadas: suavizadas para que se lea mejor el texto del arte
             draw_sprite_ext(_def.spr, 0, _x, _y, _esc, _esc, 0, c_white, 1);
+            gpu_set_texfilter(false);      // el texto pixelado siempre nitido
             // "Nivel 2/3": celeste si ya esta al maximo
             var _niv = mejoras[$ _def.mejora];
             var _max = mejoras_max[$ _def.mejora];
             var _piezas = [cartas_ui.m_nivel, cartas_ui.dig[_niv], cartas_ui.m_barra, cartas_ui.dig[_max]];
-            texto_piezas(_piezas, _x + _cw / 2, _y + _ch + _lab_h / 2, 2, (_niv >= _max) ? _celeste : _dorado, 1, 6);
+            texto_piezas(_piezas, _x + _cw / 2, _y + _ch + _lab_h / 2, _lsc, (_niv >= _max) ? _celeste : _dorado, 1, 6);
         }
     }
 

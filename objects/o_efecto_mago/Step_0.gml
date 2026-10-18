@@ -18,6 +18,8 @@ if (fase == "activo") {
             if (!variable_instance_exists(_en, "es_enemigo") || !_en.es_enemigo) continue;
             if (variable_instance_exists(_en, "recibir_dano")) _en.recibir_dano(dano);
             else if (variable_instance_exists(_en, "hp")) _en.hp -= dano;
+            // carta Quemadura ralentizante: el fuego tambien frena a los enemigos que lo pisan (se renueva en cada pulso)
+            if (instance_exists(o_player) && o_player.mejoras.quemadura_lenta > 0 && variable_instance_exists(_en, "ralentizar")) _en.ralentizar(o_player.lento_factor, 75);
         }
         ds_list_destroy(_lista);
     }
