@@ -11,6 +11,8 @@
 event_inherited();
 
 nombre = "General Demonio";
+subtitulo = "Jefe del Acto III";
+intro_spr = spr_general_intro;   // ilustracion de la presentacion (o_intro_jefe)
 hp_max = 500;
 hp     = hp_max;
 radio  = 24;

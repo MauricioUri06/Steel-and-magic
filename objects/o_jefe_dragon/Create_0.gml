@@ -1,4 +1,4 @@
-// ===== Dragon cibernetico (jefe del acto 2) =====
+// ===== Dragon cibernetico (jefe del acto 1) =====
 // Vuela en circulos alrededor del jugador (pasa por encima de las paredes). Ataques:
 //   aliento    barrido de plasma en abanico.
 //   picada     sube fuera de vista (invulnerable); su sombra te sigue, se frena y cae: impacto,
@@ -7,6 +7,9 @@
 event_inherited();
 
 nombre  = "Dragon cibernetico";
+subtitulo = "Jefe del Acto I";
+intro_spr = spr_dragon_intro;   // ilustracion de la presentacion (o_intro_jefe)
+sala_siguiente = rm_acto_2_oxidado;   // al vencerlo se pasa al acto 2
 hp_max  = 400;
 hp      = hp_max;
 radio   = 40;

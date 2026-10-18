@@ -1,4 +1,4 @@
-// ===== Orco Mecha (jefe del acto 1) =====
+// ===== Orco Mecha (jefe del acto 2) =====
 // Un orco dentro de un mecha. Ataques:
 //   salto      3 saltos seguidos hacia ti; cada uno avisa con una grieta y al caer agrieta el suelo.
 //              Si choca contra una pared queda aturdido.
@@ -7,7 +7,8 @@
 event_inherited();
 
 nombre = "Orco Mecha";
-subtitulo = "Jefe del Acto I";
+subtitulo = "Jefe del Acto II";
+sala_siguiente = rm_acto_3_fortaleza;   // al vencerlo se pasa al acto 3
 intro_spr = spr_orco_mecha_intro;   // ilustracion de la presentacion (o_intro_jefe)
 hp_max = 350;
 hp     = hp_max;

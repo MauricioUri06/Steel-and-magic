@@ -1,10 +1,44 @@
 if (victoria) exit;
 
+// ===== Cambiando de acto: esperar, juntar los orbes, fundido a negro y pasar a la room nueva =====
+if (sala_destino != -1) {
+    trans_t += 1;
+    if (trans_t == trans_espera) {
+        // los orbes que quedaron en el suelo se suman solos (se perderian al cambiar de room)
+        with (o_orbe_xp) {
+            if (instance_exists(o_player)) o_player.ganar_xp(valor);
+            instance_destroy();
+        }
+    }
+    if (trans_t >= trans_espera + trans_fundido) {
+        var _sala = sala_destino;
+        sala_destino = -1;
+        trans_t = 0;
+        cola = [];
+        timer = pausa_acto;
+        if (instance_exists(o_player)) o_player.alpha_entrada = 1;   // la room nueva aparece desde negro (fundido del jugador)
+        room_goto(_sala);
+    }
+    exit;
+}
+
+// ===== Se vencio al jefe: si lleva a otra room, empieza el cambio de acto =====
+if (jefe_actual != noone && (!instance_exists(jefe_actual) || !jefe_actual.es_enemigo)) {
+    jefe_actual = noone;
+    if (jefe_sala != -1) {
+        sala_destino = jefe_sala;
+        jefe_sala = -1;
+        trans_t = 0;
+        exit;
+    }
+}
+
 // ===== Prueba: U mata a toda la oleada (vivos, jefe incluido, y los que faltaban salir) y lanza la siguiente =====
 if (debug_matar && keyboard_check_pressed(ord("U"))) {
     cola = [];
     with (o_enemigo_base) if (es_enemigo) morir();   // muerte normal: sueltan xp y se cuentan las bajas
-    if (oleada < total_oleadas) lanzar_oleada();
+    // si murio un jefe que lleva a otro acto, no se lanza nada: el cambio de acto empieza en el proximo paso
+    if (oleada < total_oleadas && jefe_sala == -1) lanzar_oleada();
 }
 
 var _vivos = 0;

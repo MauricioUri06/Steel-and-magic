@@ -48,6 +48,8 @@
   },
   "name":"Steel & Magic",
   "resources":[
+    {"id":{"name":"spr_general_intro","path":"sprites/spr_general_intro/spr_general_intro.yy",},},
+    {"id":{"name":"spr_dragon_intro","path":"sprites/spr_dragon_intro/spr_dragon_intro.yy",},},
     {"id":{"name":"spr_orco_mecha_intro","path":"sprites/spr_orco_mecha_intro/spr_orco_mecha_intro.yy",},},
     {"id":{"name":"spr_orco_mecha_aterrizaje","path":"sprites/spr_orco_mecha_aterrizaje/spr_orco_mecha_aterrizaje.yy",},},
     {"id":{"name":"spr_orco_mecha_salto","path":"sprites/spr_orco_mecha_salto/spr_orco_mecha_salto.yy",},},

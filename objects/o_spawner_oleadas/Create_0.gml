@@ -15,6 +15,20 @@ cola           = [];                                 // enemigos que faltan apar
 timer_cola     = 0;
 max_vivos      = 60;                                 // tope de enemigos a la vez (rendimiento): la cola espera
 victoria       = false;
+
+// ===== Cambio de acto =====
+// Al vencer a un jefe con sala_siguiente (Dragon -> acto 2, Orco Mecha -> acto 3) se espera un poco, se juntan
+// los orbes que quedaron, la pantalla se pone negra y se pasa a esa room. Este objeto es persistente: las oleadas
+// siguen contando en la room nueva (y el jugador tambien es persistente).
+persistent    = true;
+depth         = -9000;   // su Draw GUI va despues del HUD del jugador: el fundido lo tapa todo
+jefe_actual   = noone;   // jefe que salio en la ultima oleada de jefe
+jefe_sala     = -1;      // room a la que lleva vencerlo
+sala_destino  = -1;      // != -1 mientras se esta cambiando de acto
+trans_t       = 0;
+trans_espera  = 3 * game_get_speed(gamespeed_fps);    // se ve la muerte del jefe antes de irse
+trans_fundido = round(0.6 * game_get_speed(gamespeed_fps));   // pasos que tarda en ponerse negra la pantalla
+pausa_acto    = 4 * game_get_speed(gamespeed_fps);    // en la room nueva, la primera oleada llega a los 4 s
 debug          = false;  // true: la tecla N lanza la siguiente oleada ya (para probar).
 debug_matar    = true;   // true: la tecla U mata a toda la oleada y lanza la siguiente (para probar). Ponlo en false para la version final.
 
@@ -27,7 +41,7 @@ tipos = [
     { obj: o_enemigo_orco_exo,       coste: 4, desde: 12 },
     { obj: o_enemigo_elite_misiles,  coste: 4, desde: 14 }
 ];
-jefes = [o_jefe_orco_mecha, o_jefe_dragon, o_jefe_general];   // oleadas 10, 20 y 30
+jefes = [o_jefe_dragon, o_jefe_orco_mecha, o_jefe_general];   // oleadas 10, 20 y 30
 
 puntos_de = function(_n) { return round(4 + _n * 1.6); };     // oleada 1: 6 puntos ... oleada 29: 50
 vida_mult = function(_n) { return 1 + (_n - 1) * 0.02; };     // oleada 29: +56% de vida
@@ -82,6 +96,10 @@ lugar_libre = function() {
 aparecer = function(_obj) {
     var _p = lugar_libre();
     var _e = instance_create_depth(_p[0], _p[1], 0, _obj);
+    if (object_is_ancestor(_obj, o_jefe_base)) {
+        jefe_actual = _e;
+        jefe_sala   = _e.sala_siguiente;
+    }
     if (!object_is_ancestor(_obj, o_jefe_base)) {
         _e.hp_max = round(_e.hp_max * vida_mult(oleada));
         _e.hp = _e.hp_max;

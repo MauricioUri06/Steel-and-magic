@@ -1,3 +1,13 @@
+// ===== Cambio de acto =====
+// El jugador es persistente: al pasar a otra room de acto ya existe, pero la room trae su propio o_player.
+// Este (el de la room) solo le deja su posicion al que ya venia jugando y desaparece, asi se conserva todo.
+if (instance_number(o_player) > 1) {
+    var _x = x, _y = y;
+    with (o_player) if (id != other.id) { x = _x; y = _y; }
+    instance_destroy();
+    exit;
+}
+
 // ===== Stats =====
 // OJO: antes era "speed = 5". "speed" es una variable reservada de GameMaker
 // (mueve la instancia sola hacia la derecha), por eso se renombra a move_speed.

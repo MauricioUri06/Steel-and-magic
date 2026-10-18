@@ -43,6 +43,7 @@ invulnerable   = false;
 
 // Presentacion estilo Smash al aparecer (o_intro_jefe). Sin ilustracion (-1) no hay presentacion.
 intro_spr    = -1;
+sala_siguiente = -1;  // room a la que se pasa al vencerlo (-1 = ninguna); lo maneja o_spawner_oleadas
 subtitulo    = "";
 intro_espera = 2;    // cuadros que espera antes de la presentacion
 
