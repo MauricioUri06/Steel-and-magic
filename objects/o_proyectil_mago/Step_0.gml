@@ -20,6 +20,9 @@ ds_list_destroy(_lista);
 
 // ===== Al impactar o llegar al limite: se destruye y deja los efectos de fuego =====
 if (_impacto || recorrido >= alcance) {
+    // impacto: explosion (mas grande = mas grave y fuerte); si solo llego al limite del rango, solo se enciende el fuego
+    if (_impacto) sfx_play(sfx_explosion, clamp(0.4 + 0.2 * escala, 0.5, 1), clamp(1.25 - 0.15 * escala, 0.8, 1.2), 0.05);
+    else sfx_play(sfx_fuego, 0.7, 1, 0.08);
     var _ed = depth + 2;   // los efectos quedan en el suelo, por debajo del jugador
     // uno en el punto de impacto
     instance_create_depth(clamp(x, 16, room_width - 16), clamp(y, 16, room_height - 16), _ed, o_efecto_mago, { dano: dano_efecto, escala: escala_efecto });

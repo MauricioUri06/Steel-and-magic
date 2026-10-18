@@ -1,4 +1,5 @@
-"""Acto 1: cuerdas (piano, violines, violonchelo, guitarras). Mi menor, 156 bpm, 64 compases (~1:38). Frenetico y heroico."""
+"""Acto 1: cuerdas (piano, violines, violonchelo, guitarras) + vientos (flauta, flauta de pan). Mi menor, 156 bpm, 64 compases (~1:38). Frenetico y heroico.
+v2: violines mas suaves (menos agudos, filtro, menos velocidad) y vientos llevando el tema."""
 import numpy as np
 from mus import *
 
@@ -72,7 +73,7 @@ for bar in range(24, BARS):
 cb.notes = [[b, d, (p if p >= 28 else p + 12), v] for b, d, p, v in cb.notes]
 
 # ------------------------------------------------ cuerdas tremolo (pad de tension, compases 4-7, 40-63)
-tr = song.add(Part("Cuerdas tremolo", 44, gain=8, pan=66, hall=0.5, room=0.05, jit=0, vjit=3))
+tr = song.add(Part("Cuerdas tremolo", 44, gain=8, pan=66, hall=0.5, room=0.05, jit=0, vjit=3, lp=4500))
 for bar in list(range(4, 8)) + list(range(40, 64)):
     for p in pad[ch(bar)]:
         tr.n(bar * 4, 3.97, p + 12, int(56 * sec(bar)))
@@ -81,20 +82,46 @@ for bar in range(40, 48):
 tr.cc(48 * 4, 11, 120)
 
 # ------------------------------------------------ violines: tema (compases 8-39 y 48-63), vibrato en notas largas
-v1 = song.add(Part("Violines (tema)", 40, gain=3, pan=40, hall=0.45, room=0.08, jit=0.006, vjit=4))
-vo = song.add(Part("Violines 8va grave", 41, gain=3, pan=90, hall=0.45, room=0.08, jit=0.006, vjit=4))
-v1.melody(8, theme, vel=88, legato=0.97)
-v1.melody(24, theme, vel=94, legato=0.97)
+v1 = song.add(Part("Violines (tema)", 40, gain=0, pan=40, hall=0.5, room=0.08, jit=0.006, vjit=4, lp=4000))
+vo = song.add(Part("Violines 8va grave", 41, gain=3, pan=90, hall=0.5, room=0.08, jit=0.006, vjit=4, lp=3200))
+v1.melody(8, theme, vel=66, legato=0.97)
+v1.melody(24, theme, vel=76, legato=0.97)
 vo.melody(24, theme, vel=76, transpose=-12, legato=0.97)
-v1.melody(48, theme, vel=104, legato=0.97)
-vo.melody(48, theme, vel=88, transpose=-12, legato=0.97)
+v1.melody(48, theme, vel=82, legato=0.97)
+vo.melody(48, theme, vel=86, transpose=-12, legato=0.97)
 # expresion: vibrato de viola/violin con CC1 (modulacion) en todo el tema
 for s0, e0 in ((8, 24), (24, 40), (48, 64)):
     for b in range(s0 * 4, e0 * 4, 2):
         v1.cc(b, 1, 70)
 
+
+# ------------------------------------------------ vientos: flauta (tema) y flauta de pan (tramo suave)
+def vib_notas(part, bar0, bars):
+    """vibrato con pitch bend solo en las notas largas (>= 1.5 tiempos) de una melodia escrita con tokens"""
+    for bi, txt in enumerate(bars):
+        t = 0.0
+        for tok in txt.split():
+            nm, d = tok.split('/')
+            d = float(d)
+            if nm != 'r' and d >= 1.5:
+                part.vibrato((bar0 + bi) * 4 + t, d * 0.97, BPM, depth=0.16, rate=5.2, delay=0.3)
+            t += d
+
+fl = song.add(Part("Flauta (tema)", 73, gain=-9, pan=58, hall=0.45, room=0.1, jit=0.006, vjit=4))
+fl_intro = ["r/2 E5/1 G5/1", "B5/3 A5/1", "G5/1 E5/1 C5/2", "F#5/1 A5/1 D6/2"]
+fl.melody(4, fl_intro, vel=66, legato=0.95)
+vib_notas(fl, 4, fl_intro)
+for b0, vv in ((8, 80), (24, 84), (48, 92)):
+    fl.melody(b0, theme, vel=vv, legato=0.95)
+    vib_notas(fl, b0, theme)
+pf = song.add(Part("Flauta de pan", 75, gain=7, pan=50, hall=0.55, room=0.08, jit=0.008, vjit=4))
+pan_lin = ["E5/2 A5/1 C6/1", "B5/3 A5/1", "G5/2 E5/1 G5/1", "A5/2 F#5/1 A5/1",
+           "B5/2 G5/1 E5/1", "F#5/2 D#5/1 F#5/1", "G5/1 B5/1 E6/2", "D#6/3 r/1"]
+pf.melody(40, pan_lin, vel=70, legato=0.96)
+vib_notas(pf, 40, pan_lin)
+
 # ------------------------------------------------ violin II: contramelodia rapida en el compas 40-47 (cuerdas rapidas)
-fs = song.add(Part("Cuerdas rapidas", 48, gain=8, pan=36, hall=0.4, room=0.08, jit=0.004, vjit=4))
+fs = song.add(Part("Cuerdas rapidas", 48, gain=8, pan=36, hall=0.4, room=0.08, jit=0.004, vjit=4, lp=4500))
 for bar in range(40, 48):
     c = chord[ch(bar)]
     for i in range(16):

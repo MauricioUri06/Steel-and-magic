@@ -10,7 +10,7 @@
   "compression":3,
   "compressionQuality":4,
   "conversionMode":0,
-  "duration":98.461538,
+  "duration":98.46154,
   "exportDir":"",
   "name":"mus_acto1",
   "parent":{

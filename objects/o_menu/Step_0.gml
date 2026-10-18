@@ -49,7 +49,14 @@ if (!fade_saliendo) {
         var _clic = (bloqueo <= 0) && mouse_check_button_pressed(mb_left) && _bajo >= 0;
         var _enter = (bloqueo <= 0) && (keyboard_check_pressed(vk_enter) || keyboard_check_pressed(vk_space));
         if (_clic) sel = _bajo;
-        if (sel >= 0 && (_clic || _enter)) menu_accion(botones[sel].accion);
+        if (sel != sel_snd) {
+            if (sel >= 0) sfx_play(sfx_boton_hover);
+            sel_snd = sel;
+        }
+        if (sel >= 0 && (_clic || _enter)) {
+            sfx_play(sfx_boton_clic);
+            menu_accion(botones[sel].accion);
+        }
         _resaltado = sel;
     } else if (pantalla == "tutorial") {
         // Tutorial: scroll con la rueda del mouse, flechas arriba/abajo, W/S o RePag/AvPag
@@ -64,7 +71,7 @@ if (!fade_saliendo) {
         volver_hover = point_in_rectangle(_mx, _my, room_width / 2 - boton_w / 2, volver_cy - boton_h / 2, room_width / 2 + boton_w / 2, volver_cy + boton_h / 2);
         var _volver = (bloqueo <= 0) && ((volver_hover && mouse_check_button_pressed(mb_left))
                       || keyboard_check_pressed(vk_escape) || keyboard_check_pressed(vk_backspace) || keyboard_check_pressed(vk_enter));
-        if (_volver) { pantalla = "principal"; bloqueo = 15; }
+        if (_volver) { sfx_play(sfx_boton_clic); pantalla = "principal"; bloqueo = 15; }
     } else if (pantalla == "mejoras") {
         // Mejoras permanentes: entrada directa, sin crear ni pausar instancias.
         var _mu = min(room_width / 1280, room_height / 720);
@@ -80,14 +87,22 @@ if (!fade_saliendo) {
             if (point_in_rectangle(_mx, _my, _mbx, _mby, _mbx + 102 * _mu, _mby + 32 * _mu)) meta_fila_hover = _mi;
         }
 
+        if (meta_fila_hover != meta_hover_snd) {
+            if (meta_fila_hover >= 0) sfx_play(sfx_boton_hover);
+            meta_hover_snd = meta_fila_hover;
+        }
+
         var _mvx = room_width * 0.5 - 116 * _mu;
         var _mvy = _mpy + 432 * _mu;
         meta_volver_hover = point_in_rectangle(_mx, _my, _mvx, _mvy, _mvx + 232 * _mu, _mvy + 36 * _mu);
         volver_hover = meta_volver_hover;
 
         if (bloqueo <= 0 && mouse_check_button_pressed(mb_left)) {
-            if (meta_fila_hover >= 0) meta_comprar_mejora(meta_fila_hover);
-            else if (meta_volver_hover) { pantalla = "principal"; bloqueo = 15; }
+            if (meta_fila_hover >= 0) {
+                if (meta_comprar_mejora(meta_fila_hover)) sfx_play(sfx_compra);
+                else sfx_play(sfx_error);   // no alcanzan las monedas o ya esta al maximo
+            }
+            else if (meta_volver_hover) { sfx_play(sfx_boton_clic); pantalla = "principal"; bloqueo = 15; }
         }
         if (keyboard_check_pressed(vk_escape) || keyboard_check_pressed(vk_backspace)) {
             pantalla = "principal";

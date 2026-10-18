@@ -12,6 +12,7 @@ color        = c_red;
 volador      = false;   // true = ignora las paredes (o_solid)
 monedas_drop = 1;       // monedas que suma al jugador al morir
 xp_drop      = 1;       // experiencia que suelta al morir (en orbes que el jugador junta)
+reduccion_cd = 12;      // pasos que se le restan al tiempo entre ataques de los enemigos normales (12 = 0.2 s a 60 fps; 0 = como antes). Lo usan o_enemigo_melee y o_enemigo_rango; los jefes tienen su propio ritmo
 
 mask_index = spr_enemigo_mask;   // los hijos no heredan la mascara del .yy; en el Step se escala segun el radio
 
@@ -54,13 +55,16 @@ dur_caida  = 24;        // pasos con el sprite de caida
 dur_muerto = 60;        // pasos que el cadaver tarda en desvanecerse
 
 // Lo llaman el dash, los proyectiles y los efectos del jugador.
-recibir_dano = function(_cantidad) {
+// _ruido = false lo usan la quemadura, el fuego en el suelo y las explosiones (ya tienen su propio sonido)
+recibir_dano = function(_cantidad, _ruido = true) {
     hp -= _cantidad;
     flash = 6;
+    if (_ruido) sfx_play(sfx_golpe_enemigo, 1, 1, 0.08, 45);
 };
 
 // Deja de ser enemigo (no recibe golpes, no estorba) y empieza la animacion de muerte.
 morir = function() {
+    sfx_play(sfx_enemigo_muere, 0.9, 1, 0.1, 40);
     if (instance_exists(o_player)) {
         o_player.monedas += monedas_drop;
         o_player.enemigo_derrotado(0);   // cuenta la baja (carta de Curacion); la xp va en los orbes

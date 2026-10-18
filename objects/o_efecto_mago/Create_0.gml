@@ -21,3 +21,4 @@ image_speed  = 0;          // la animacion se controla a mano en el Step
 image_index  = 0;
 image_xscale = escala * choose(1, -1);   // espejado al azar para que no se vean todos iguales
 image_yscale = escala;
+sfx_play(sfx_fuego, 0.35, 1, 0.1, 120);   // las llamas nuevas (varias a la vez, o las del dash) suenan como una sola

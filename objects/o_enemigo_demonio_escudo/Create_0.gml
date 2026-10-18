@@ -31,14 +31,16 @@ bloqueo       = 0;     // pasos que el escudo se dibuja en blanco al bloquear
 
 escudo_arriba = function() { return estado == "perseguir"; };
 
-recibir_dano = function(_cantidad) {
+recibir_dano = function(_cantidad, _ruido = true) {
     // los ataques del jugador no dicen de donde vienen: se usa la posicion del jugador
     if (escudo_arriba() && instance_exists(o_player)
         && abs(angle_difference(escudo_dir, point_direction(x, y, o_player.x, o_player.y))) < escudo_angulo) {
         _cantidad *= escudo_mult;
         bloqueo = 6;
+        if (_ruido) sfx_play(sfx_golpe_escudo, 1, 1, 0.06, 60);
     } else {
         flash = 6;
+        if (_ruido) sfx_play(sfx_golpe_enemigo, 1, 1, 0.08, 45);
     }
     hp -= _cantidad;
 };

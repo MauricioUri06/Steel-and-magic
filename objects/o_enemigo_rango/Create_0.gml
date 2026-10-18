@@ -62,7 +62,7 @@ comportamiento = function() {
                 } else {
                     estado = "recuperar";
                     timer  = recuperacion;
-                    cd     = cd_disparo;
+                    cd     = max(0, cd_disparo - reduccion_cd);   // reduccion_cd: ver o_enemigo_base
                 }
             }
             break;
