@@ -1,3 +1,6 @@
+// En pausa: foto del juego oscurecida (el HUD de abajo queda encima)
+pausa_dibujar_fondo();
+
 // HUD de prueba: clase activa
 draw_set_color(c_black);
 draw_text(17, 17, "Clase: " + nombres_clase[clase_idx] + "   (rueda del mouse para cambiar)");
@@ -12,7 +15,7 @@ draw_text(17, 41, _txt);
 draw_set_color(c_white);
 draw_text(16, 40, _txt);
 // una barra por carga de dash; la que se esta recargando se va llenando
-for (var _i = 0; _i < _dn.cargas; _i++) {
+for (var _i = 0; _i < dash_cargas_max; _i++) {
     var _bx = 16 + _i * 28;
     draw_set_color(c_black);
     draw_rectangle(_bx, 68, _bx + 24, 78, false);
@@ -20,8 +23,14 @@ for (var _i = 0; _i < _dn.cargas; _i++) {
     if (_i < dash_cargas) {
         draw_rectangle(_bx + 1, 69, _bx + 23, 77, false);
     } else if (_i == dash_cargas) {
-        var _p = 1 - clamp(dash_recarga / _dn.cd, 0, 1);
+        var _p = 1 - clamp(dash_recarga / dash_cd, 0, 1);
         draw_rectangle(_bx + 1, 69, _bx + 1 + 22 * _p, 77, false);
     }
 }
 draw_set_color(c_white);
+
+// Menu de pausa y fundidos (siempre al final para quedar por encima de todo)
+pausa_dibujar_ui();
+
+// Pantalla de muerte: "HAS FALLADO" y botones (encima del fundido a negro)
+muerte_dibujar_ui();
