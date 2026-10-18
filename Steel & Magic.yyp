@@ -48,6 +48,7 @@
   },
   "name":"Steel & Magic",
   "resources":[
+    {"id":{"name":"spr_orco_mecha_intro","path":"sprites/spr_orco_mecha_intro/spr_orco_mecha_intro.yy",},},
     {"id":{"name":"spr_orco_mecha_aterrizaje","path":"sprites/spr_orco_mecha_aterrizaje/spr_orco_mecha_aterrizaje.yy",},},
     {"id":{"name":"spr_orco_mecha_salto","path":"sprites/spr_orco_mecha_salto/spr_orco_mecha_salto.yy",},},
     {"id":{"name":"spr_orco_mecha_aviso_salto","path":"sprites/spr_orco_mecha_aviso_salto/spr_orco_mecha_aviso_salto.yy",},},
@@ -138,6 +139,7 @@
     {"id":{"name":"o_meta_manager","path":"objects/o_meta_manager/o_meta_manager.yy",},},
     {"id":{"name":"o_menu","path":"objects/o_menu/o_menu.yy",},},
     {"id":{"name":"o_player","path":"objects/o_player/o_player.yy",},},
+    {"id":{"name":"o_intro_jefe","path":"objects/o_intro_jefe/o_intro_jefe.yy",},},
     {"id":{"name":"o_orbe_xp","path":"objects/o_orbe_xp/o_orbe_xp.yy",},},
     {"id":{"name":"o_proyectil_caballero","path":"objects/o_proyectil_caballero/o_proyectil_caballero.yy",},},
     {"id":{"name":"o_proyectil_mago","path":"objects/o_proyectil_mago/o_proyectil_mago.yy",},},

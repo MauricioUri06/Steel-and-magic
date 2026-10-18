@@ -1,5 +1,12 @@
 if (victoria) exit;
 
+// ===== Prueba: U mata a toda la oleada (vivos, jefe incluido, y los que faltaban salir) y lanza la siguiente =====
+if (debug_matar && keyboard_check_pressed(ord("U"))) {
+    cola = [];
+    with (o_enemigo_base) if (es_enemigo) morir();   // muerte normal: sueltan xp y se cuentan las bajas
+    if (oleada < total_oleadas) lanzar_oleada();
+}
+
 var _vivos = 0;
 with (o_enemigo_base) if (es_enemigo) _vivos += 1;
 

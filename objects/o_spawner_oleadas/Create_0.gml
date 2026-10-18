@@ -16,6 +16,7 @@ timer_cola     = 0;
 max_vivos      = 60;                                 // tope de enemigos a la vez (rendimiento): la cola espera
 victoria       = false;
 debug          = false;  // true: la tecla N lanza la siguiente oleada ya (para probar).
+debug_matar    = true;   // true: la tecla U mata a toda la oleada y lanza la siguiente (para probar). Ponlo en false para la version final.
 
 // tipos de enemigos: coste = puntos que gasta, desde = oleada desde la que puede aparecer
 tipos = [

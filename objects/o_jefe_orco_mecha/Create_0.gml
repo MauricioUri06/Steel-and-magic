@@ -7,6 +7,8 @@
 event_inherited();
 
 nombre = "Orco Mecha";
+subtitulo = "Jefe del Acto I";
+intro_spr = spr_orco_mecha_intro;   // ilustracion de la presentacion (o_intro_jefe)
 hp_max = 350;
 hp     = hp_max;
 radio  = 32;

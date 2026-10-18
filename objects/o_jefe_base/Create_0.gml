@@ -41,6 +41,11 @@ fases  = [ { hp: 1, ataques: [] } ];
 dur_transicion = 90;
 invulnerable   = false;
 
+// Presentacion estilo Smash al aparecer (o_intro_jefe). Sin ilustracion (-1) no hay presentacion.
+intro_spr    = -1;
+subtitulo    = "";
+intro_espera = 2;    // cuadros que espera antes de la presentacion
+
 ataque           = undefined;   // ataque actual (struct)
 ultimo_ataque    = "";
 repeticiones     = 0;
@@ -88,6 +93,14 @@ empezar_aviso = function(_pasos) {
 
 comportamiento = function() {
     if (!instance_exists(o_player)) return;
+
+    // ===== Presentacion (una vez, a los pocos cuadros de aparecer, para que ya salga en la foto) =====
+    if (intro_espera > 0) {
+        intro_espera -= 1;
+        if (intro_espera == 0 && sprite_exists(intro_spr)) {
+            instance_create_depth(0, 0, -10000, o_intro_jefe, { spr: intro_spr, nombre: string_upper(nombre), subtitulo: subtitulo });
+        }
+    }
 
     // ===== Cambio de fase segun la vida =====
     if (estado != "transicion" && fase + 1 < array_length(fases) && hp / hp_max <= fases[fase + 1].hp) {

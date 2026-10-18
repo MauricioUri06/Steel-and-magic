@@ -15,8 +15,8 @@ draw_set_color(c_black);
 draw_text(_gx + 1, 17, _txt);
 draw_set_color((jefe_vivo() || victoria) ? make_colour_rgb(255, 200, 80) : c_white);
 draw_text(_gx, 16, _txt);
-if (debug) {
+if (debug || debug_matar) {
     draw_set_color(c_white);
-    draw_text(_gx, 36, "(N = siguiente oleada)");
+    draw_text(_gx, 36, (debug ? "N = siguiente oleada   " : "") + (debug_matar ? "U = matar oleada y pasar a la siguiente" : ""));
 }
 draw_set_halign(fa_left);
