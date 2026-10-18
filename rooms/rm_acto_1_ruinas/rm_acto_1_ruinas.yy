@@ -6,6 +6,7 @@
   "inheritCreationOrder":false,
   "inheritLayers":false,
   "instanceCreationOrder":[
+    {"name":"inst_META_UI_0001","path":"rooms/rm_acto_1_ruinas/rm_acto_1_ruinas.yy",},
     {"name":"inst_1S000001","path":"rooms/rm_acto_1_ruinas/rm_acto_1_ruinas.yy",},
     {"name":"inst_1S000002","path":"rooms/rm_acto_1_ruinas/rm_acto_1_ruinas.yy",},
     {"name":"inst_1S000003","path":"rooms/rm_acto_1_ruinas/rm_acto_1_ruinas.yy",},
@@ -42,6 +43,7 @@
   "isDnd":false,
   "layers":[
     {"$GMRInstanceLayer":"","%Name":"Gameplay","depth":0,"effectEnabled":true,"effectType":null,"gridX":32,"gridY":32,"hierarchyFrozen":false,"inheritLayerDepth":false,"inheritLayerSettings":false,"inheritSubLayers":true,"inheritVisibility":true,"instances":[
+        {"$GMRInstance":"v4","%Name":"inst_META_UI_0001","colour":4294967295,"frozen":false,"hasCreationCode":false,"ignore":false,"imageIndex":0,"imageSpeed":1.0,"inheritCode":false,"inheritedItemId":null,"inheritItemSettings":false,"isDnd":false,"name":"inst_META_UI_0001","objectId":{"name":"o_meta_manager","path":"objects/o_meta_manager/o_meta_manager.yy",},"properties":[],"resourceType":"GMRInstance","resourceVersion":"2.0","rotation":0.0,"scaleX":1.0,"scaleY":1.0,"x":0.0,"y":0.0,},
         {"$GMRInstance":"v4","%Name":"inst_795020E9","colour":4294967295,"frozen":false,"hasCreationCode":false,"ignore":false,"imageIndex":0,"imageSpeed":1.0,"inheritCode":false,"inheritedItemId":null,"inheritItemSettings":false,"isDnd":false,"name":"inst_795020E9","objectId":{"name":"o_player","path":"objects/o_player/o_player.yy",},"properties":[],"resourceType":"GMRInstance","resourceVersion":"2.0","rotation":0.0,"scaleX":1.0,"scaleY":1.0,"x":608.0,"y":352.0,},
         {"$GMRInstance":"v4","%Name":"inst_5D0B0010","colour":4294967295,"frozen":false,"hasCreationCode":false,"ignore":false,"imageIndex":0,"imageSpeed":1.0,"inheritCode":false,"inheritedItemId":null,"inheritItemSettings":false,"isDnd":false,"name":"inst_5D0B0010","objectId":{"name":"o_spawner_oleadas","path":"objects/o_spawner_oleadas/o_spawner_oleadas.yy",},"properties":[],"resourceType":"GMRInstance","resourceVersion":"2.0","rotation":0.0,"scaleX":1.0,"scaleY":1.0,"x":64.0,"y":64.0,},
       ],"layers":[],"name":"Gameplay","properties":[],"resourceType":"GMRInstanceLayer","resourceVersion":"2.0","userdefinedDepth":false,"visible":true,},
