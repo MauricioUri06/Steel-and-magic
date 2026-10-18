@@ -29,6 +29,48 @@ for (var _i = 0; _i < dash_cargas_max; _i++) {
 }
 draw_set_color(c_white);
 
+// HUD: vida (debajo de las barras del dash)
+var _hbx = 16, _hby = 86, _hbw = 200, _hbh = 14;
+draw_set_color(c_black);
+draw_rectangle(_hbx - 1, _hby - 1, _hbx + _hbw + 1, _hby + _hbh + 1, false);
+draw_set_color(make_colour_rgb(70, 20, 20));
+draw_rectangle(_hbx, _hby, _hbx + _hbw, _hby + _hbh, false);
+draw_set_color(make_colour_rgb(220, 50, 50));
+draw_rectangle(_hbx, _hby, _hbx + _hbw * clamp(hp / hp_max, 0, 1), _hby + _hbh, false);
+var _txt_hp = "HP " + string(ceil(max(0, hp))) + "/" + string(hp_max);
+draw_set_color(c_black);
+draw_text(_hbx + _hbw + 9, _hby, _txt_hp);
+draw_set_color(c_white);
+draw_text(_hbx + _hbw + 8, _hby - 1, _txt_hp);
+
+// HUD: experiencia y nivel (barra abajo, al centro)
+var _xgw = display_get_gui_width();
+var _xgh = display_get_gui_height();
+var _xw = _xgw * 0.5, _xh = 14;
+var _xx = (_xgw - _xw) / 2, _xy = _xgh - 34;
+draw_set_color(c_black);
+draw_rectangle(_xx - 2, _xy - 2, _xx + _xw + 2, _xy + _xh + 2, false);
+draw_set_color(make_colour_rgb(40, 34, 14));
+draw_rectangle(_xx, _xy, _xx + _xw, _xy + _xh, false);
+draw_set_color(make_colour_rgb(255, 214, 102));
+draw_rectangle(_xx, _xy, _xx + _xw * clamp(xp / xp_sig, 0, 1), _xy + _xh, false);
+var _txt_xp = "Nivel " + string(nivel) + "   " + string(xp) + " / " + string(xp_sig) + " XP";
+draw_set_halign(fa_center);
+draw_set_color(c_black);
+draw_text(_xgw / 2 + 1, _xy - 21, _txt_xp);
+draw_set_color(c_white);
+draw_text(_xgw / 2, _xy - 22, _txt_xp);
+draw_set_halign(fa_left);
+
+// Cartel de acto ("ACTO I", "ACTO II", "ACTO III") en dorado, arriba
+acto_dibujar();
+
+// Pantalla de subida de nivel: las cartas al centro y el boton Confirmar
+cartas_dibujar_ui();
+
+// Menu de mejoras (tecla M)
+mejoras_dibujar_ui();
+
 // Menu de pausa y fundidos (siempre al final para quedar por encima de todo)
 pausa_dibujar_ui();
 
