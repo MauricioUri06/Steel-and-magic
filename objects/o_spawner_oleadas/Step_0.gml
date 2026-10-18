@@ -58,7 +58,10 @@ var _jefe = jefe_vivo();
 
 // ===== Victoria: se lanzo la ultima oleada (el jefe final) y ya no queda jefe =====
 if (oleada >= total_oleadas) {
-    if (array_length(cola) == 0 && !_jefe) victoria = true;
+    if (array_length(cola) == 0 && !_jefe && !instance_exists(o_jefe_general)) {
+        victoria = true;
+        instance_create_depth(0, 0, -12000, o_victoria);
+    }
     exit;
 }
 

@@ -15,11 +15,15 @@ Uso (desde la raiz del repo, requiere pillow):
     # fotogramas que se tocan (efectos que invaden al vecino): dividir en 4 columnas x 4 filas
     python tools/importar_sprites.py art/enemies/dragon/dragon_sheet.png 64 spr_dragon --cuadricula 4x4 ...
 
+--hueco N: espacio minimo (px) entre fotogramas de una fila (15 por defecto; bajarlo si se pegan).
+--factor F: cuantos pixeles de la hoja son 1 pixel del sprite (para que coincida con otros sprites del mismo
+            personaje; por defecto se calcula para que el fotograma mas grande entre en la celda).
 --marcos: la hoja trae lineas de grilla dibujadas (fondo negro, marcos grises); cada celda es un fotograma.
 --borrar INDICE=x0,y0,x1,y1 vacia una zona dentro de ese recorte (se puede repetir).
 --recorte INDICE=x0,y0,x1,y1 corta ese fotograma a mano (en pixeles de la hoja original), para cuando la
 deteccion automatica lo corta mal. Si la hoja no tiene transparencia, se borra el fondo (del color de las esquinas) conectado con los bordes.
 Los fotogramas se numeran de izquierda a derecha y de arriba a abajo, empezando en 0.
+FRAMES puede ser un numero (6), un rango (0-3) o varios separados por coma (0-7,15-21).
 Hoja de IA: todos se reducen con el MISMO factor (el mayor fotograma entra en la celda), con los pies
 en la misma linea y centrados en horizontal. El origen queda en el centro de la celda. Volver a correrlo
 reemplaza los PNG pero conserva los ids del .yy, asi GameMaker no ve recursos nuevos.
@@ -33,7 +37,7 @@ COLORES = 32      # colores de la paleta comun de la hoja
 MARGEN = 1        # pixeles libres alrededor del fotograma mas grande
 
 
-def cajas(im):
+def cajas(im, hueco_cols=15):
     """Cajas (x0, y0, x1, y1) de cada fotograma, en orden de lectura."""
     a = im.getchannel('A').point(lambda v: 255 if v > 128 else 0)
     px, (W, H) = a.load(), a.size
@@ -53,7 +57,8 @@ def cajas(im):
 
     res = []
     for y0, y1 in tramos([any(px[x, y] for x in range(W)) for y in range(H)]):
-        for x0, x1 in tramos([any(px[x, y] for y in range(y0, y1 + 1)) for x in range(W)]):
+        for x0, x1 in tramos([any(px[x, y] for y in range(y0, y1 + 1)) for x in range(W)], hueco_cols):
+            if x1 - x0 < 20: continue   # chispitas sueltas entre fotogramas: no son un fotograma
             # ajustar la altura a este fotograma (las filas pueden tener alturas distintas)
             sub = a.crop((x0, y0, x1 + 1, y1 + 1)).getbbox()
             res.append((x0, y0 + sub[1], x1 + 1, y0 + sub[3]))
@@ -333,10 +338,11 @@ def quitar_fondo(im, tolerancia=3):
     return im
 
 
-def celdas_ia(recortes, celda):
+def celdas_ia(recortes, celda, factor=None):
     """Fotogramas de una hoja generada por IA (grandes, sin grilla exacta): se reducen y se alinean."""
     cw, ch = celda
-    factor = max(max(r.width / (cw - 2 * MARGEN), r.height / (ch - 2 * MARGEN)) for r in recortes)
+    if factor is None:
+        factor = max(max(r.width / (cw - 2 * MARGEN), r.height / (ch - 2 * MARGEN)) for r in recortes)
     pal = paleta(recortes)
     out = []
     for r in recortes:
@@ -370,6 +376,13 @@ def main():
             if opcion == '--recorte': destino[int(k)] = caja
             else: destino.setdefault(int(k), []).append(caja)
             del args[i:i + 2]
+    hueco, factor = 15, None
+    for opcion in ('--hueco', '--factor'):
+        if opcion in args:
+            i = args.index(opcion)
+            if opcion == '--hueco': hueco = int(args[i + 1])
+            else: factor = float(args[i + 1])
+            del args[i:i + 2]
     grilla = '--grilla' in args
     marcos = '--marcos' in args
     args = [a for a in args if a not in ('--grilla', '--marcos')]
@@ -382,10 +395,10 @@ def main():
     else:
         if marcos: recortes = recortes_marcos(Image.open(hoja))
         elif cuadricula: recortes = recortes_cuadricula(im, *cuadricula)
-        else: recortes = [im.crop(b) for b in cajas(im)]
+        else: recortes = [im.crop(b) for b in cajas(im, hueco)]
         for i, caja in recortes_manual.items():
             recortes[i] = recorte_limpio(im, caja, borrados.get(i, ()))
-        celdas = celdas_ia(recortes, celda)
+        celdas = celdas_ia(recortes, celda, factor)
     print(len(celdas), 'fotogramas encontrados')
 
     # vista previa ampliada de todos los fotogramas
@@ -397,8 +410,10 @@ def main():
     yyp = open(YYP, newline='').read()
     for spec in specs:
         sufijo, rango = spec.split('=')
-        a, _, b = rango.partition('-')
-        idx = list(range(int(a), int(b or a) + 1))
+        idx = []   # "0-7,15-21" -> 0..7 y 15..21
+        for parte in rango.split(','):
+            a, _, b = parte.partition('-')
+            idx += list(range(int(a), int(b or a) + 1))
         nombre = f'{prefijo}_{sufijo}'
         base = f'sprites/{nombre}'
         ruta = f'{base}/{nombre}.yy'
