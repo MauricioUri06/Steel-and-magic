@@ -276,21 +276,28 @@ else if (pantalla == "mejoras") {
         draw_set_color(make_colour_rgb(236, 238, 236));
         draw_text_transformed(_mcx, _mcy - 52 * _mu, "¿ESTÁS SEGURO?", 0.95 * _mu, 0.95 * _mu, 0);
         draw_set_color(make_colour_rgb(206, 216, 220));
-        draw_text_transformed(_mcx, _mcy - 15 * _mu, "Perderás todos los niveles de tus mejoras permanentes.", 0.68 * _mu, 0.68 * _mu, 0);
+        draw_text_transformed(_mcx, _mcy - 15 * _mu, "Perderás todos los niveles de tus mejoras y tus monedas.", 0.68 * _mu, 0.68 * _mu, 0);
         draw_set_color(make_colour_rgb(92, 211, 225));
-        draw_text_transformed(_mcx, _mcy + 14 * _mu, "Tus monedas y récords se conservarán.", 0.68 * _mu, 0.68 * _mu, 0);
+        draw_text_transformed(_mcx, _mcy + 14 * _mu, "Tus récords se conservarán.", 0.68 * _mu, 0.68 * _mu, 0);
 
         var _ccx = _mcx - 145 * _mu, _crx = _mcx + 145 * _mu;
-        var _cby = _mcy + 92 * _mu, _cbw = 240 * _mu, _cbh = 64 * _mu;
-        var _cf_cancel = (meta_confirmacion_sel == 0 || meta_confirm_cancel_hover) ? sprite_get_number(s_boton_menu) - 1 : 0;
-        var _cf_reset = (meta_confirmacion_sel == 1 || meta_confirm_reset_hover) ? sprite_get_number(s_boton_menu) - 1 : 0;
-        draw_sprite_stretched(s_boton_menu, _cf_cancel, _ccx - _cbw * 0.5, _cby - _cbh * 0.5, _cbw, _cbh);
-        draw_sprite_stretched(s_boton_menu, _cf_reset, _crx - _cbw * 0.5, _cby - _cbh * 0.5, _cbw, _cbh);
-        draw_set_font(fuente_pix);
-        draw_set_color(meta_confirmacion_sel == 0 ? col_cian : col_texto);
-        draw_text_transformed(_ccx, _cby, "CANCELAR", 1.1 * _mu, 1.1 * _mu, 0);
-        draw_set_color(meta_confirmacion_sel == 1 ? make_colour_rgb(255, 187, 96) : col_texto);
-        draw_text_transformed(_crx, _cby, "REINICIAR", 1.1 * _mu, 1.1 * _mu, 0);
+        var _cby = _mcy + 92 * _mu;
+        var _cbw = sprite_get_width(s_boton_menu) * _mu, _cbh = sprite_get_height(s_boton_menu) * _mu;
+        // botones a escala entera (sin deformar el pixel art) con la animacion dorado -> mecanico de los demas botones
+        var _cbtn = [
+            { cx: _ccx, frame: meta_cancel_frame, spr: meta_cancel_spr },
+            { cx: _crx, frame: meta_reset_frame,  spr: meta_reset_spr }
+        ];
+        for (var _cb = 0; _cb < 2; _cb++) {
+            var _cbt = _cbtn[_cb];
+            var _cbf = clamp(floor(_cbt.frame), 0, frames_boton - 1);
+            draw_sprite_ext(s_boton_menu, _cbf, _cbt.cx - _cbw * 0.5, _cby - _cbh * 0.5, _mu, _mu, 0, c_white, 1);
+            var _cbk = _cbt.frame / (frames_boton - 1);
+            var _cbcol = merge_colour(make_colour_rgb(70, 38, 8), col_cian, _cbk);
+            var _cbsom = merge_colour(make_colour_rgb(255, 224, 130), make_colour_rgb(4, 18, 28), _cbk);
+            draw_sprite_ext(_cbt.spr, 0, _cbt.cx, _cby + _mu, _mu, _mu, 0, _cbsom, 1);
+            draw_sprite_ext(_cbt.spr, 0, _cbt.cx, _cby,       _mu, _mu, 0, _cbcol, 1);
+        }
     }
 }
 else if (pantalla == "opciones") {

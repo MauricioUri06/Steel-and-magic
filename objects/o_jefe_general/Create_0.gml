@@ -13,7 +13,6 @@ event_inherited();
 nombre = "General Demonio";
 subtitulo = "Jefe del Acto III";
 intro_spr = spr_general_intro;   // ilustracion de la presentacion (o_intro_jefe)
-sfx_intro = sfx_rugido_general;   // rugido de la presentacion
 hp_max = 720;   // antes 500, luego 600: el jefe final es el mas duro (dragon 480, orco 600)
 hp     = hp_max;
 radio  = 24;

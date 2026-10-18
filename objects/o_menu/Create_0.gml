@@ -156,6 +156,12 @@ volver_spr = crear_sprite_texto("Volver");
 
 // --- boton Options (arriba a la izquierda, a escala 1) y pantalla de opciones de sonido ---
 opt_spr = crear_sprite_texto("Options");
+
+// --- botones de la confirmacion de reinicio de mejoras (Mejoras): misma animacion dorado -> mecanico que los demas ---
+meta_cancel_spr = crear_sprite_texto("CANCELAR");
+meta_reset_spr = crear_sprite_texto("REINICIAR");
+meta_cancel_frame = 0;
+meta_reset_frame = 0;
 opt_w = sprite_get_width(s_boton_menu);
 opt_h = sprite_get_height(s_boton_menu);
 opt_x = 24;               // esquina de arriba a la izquierda del boton

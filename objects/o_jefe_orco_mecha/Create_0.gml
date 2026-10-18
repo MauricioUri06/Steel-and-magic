@@ -10,7 +10,6 @@ nombre = "Orco Mecha";
 subtitulo = "Jefe del Acto II";
 sala_siguiente = rm_acto_3_fortaleza;   // al vencerlo se pasa al acto 3
 intro_spr = spr_orco_mecha_intro;   // ilustracion de la presentacion (o_intro_jefe)
-sfx_intro = sfx_rugido_orco;   // rugido de la presentacion
 hp_max = 600;   // antes 350, luego 420: tiene que ser mas duro que el dragon (480)
 hp     = hp_max;
 radio  = 32;

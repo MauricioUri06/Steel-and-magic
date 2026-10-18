@@ -60,3 +60,10 @@ Temporary Items
 
 # GMRT build directory
 Build
+
+# Guardados del juego y basura de Python (no son parte del proyecto)
+steel_magic_meta.ini
+steel_magic_opciones.ini
+arranque.ini
+__pycache__/
+*.pyc

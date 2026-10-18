@@ -29,8 +29,6 @@ trans_t       = 0;
 trans_espera  = 3 * game_get_speed(gamespeed_fps);    // se ve la muerte del jefe antes de irse
 trans_fundido = round(0.6 * game_get_speed(gamespeed_fps));   // pasos que tarda en ponerse negra la pantalla
 pausa_acto    = 4 * game_get_speed(gamespeed_fps);    // en la room nueva, la primera oleada llega a los 4 s
-debug          = false;  // true: la tecla N lanza la siguiente oleada ya (para probar).
-debug_matar    = false;   // true: la tecla U mata a toda la oleada y lanza la siguiente (para probar). Ponlo en false para la version final.
 
 // tipos de enemigos: coste = puntos que gasta, desde = oleada desde la que puede aparecer
 tipos = [

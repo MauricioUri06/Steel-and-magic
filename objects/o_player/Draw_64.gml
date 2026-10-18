@@ -79,12 +79,13 @@ draw_set_color(make_colour_rgb(42, 112, 149));
 if (_xp > 0) draw_rectangle(_bx, _y + 61 * _u, _bx + _bw * _xp, _y + 75 * _u, false);
 
 // Compartimento de cargas de dash integrado al metal del HUD.
+var _dash_r = 10 * _u;   // radio de las esquinas redondeadas de la caja
 draw_set_color(make_colour_rgb(5, 13, 21));
-draw_rectangle(_dash_x, _dash_y, _dash_x + _dash_w, _dash_y + _dash_h, false);
+draw_roundrect_ext(_dash_x, _dash_y, _dash_x + _dash_w, _dash_y + _dash_h, _dash_r, _dash_r, false);
 draw_set_color(make_colour_rgb(42, 58, 68));
-draw_rectangle(_dash_x, _dash_y, _dash_x + _dash_w, _dash_y + _dash_h, true);
+draw_roundrect_ext(_dash_x, _dash_y, _dash_x + _dash_w, _dash_y + _dash_h, _dash_r, _dash_r, true);
 draw_set_color(make_colour_rgb(82, 105, 115));
-draw_line(_dash_x + _u, _dash_y + _u, _dash_x + _dash_w - _u, _dash_y + _u);
+draw_line(_dash_x + _dash_r * 0.7, _dash_y + _u, _dash_x + _dash_w - _dash_r * 0.7, _dash_y + _u);   // brillo de arriba, sin salirse de las esquinas
 
 var _hp_texto = "VIDA  " + string(ceil(max(0, hp))) + " / " + string(hp_max);
 var _xp_texto = _max_nivel ? "XP  MAX" : "XP  " + string(xp) + " / " + string(xp_sig);
@@ -126,8 +127,7 @@ for (var _dc = 0; _dc < _dash_total; _dc++) {
     draw_line(_cx - _dr, _cy, _cx, _cy - _dr);
 }
 
-// Oro de esta partida: el mismo contador al que entregan monedas los enemigos.
-// Nombre del arma/clase activa; cambia junto con la rueda del mouse.
+// Nombre del arma/clase activa; cambia con las teclas 1 / 2 / 3.
 var _nombre_arma = string_upper(nombres_clase[clase_idx]);
 draw_set_color(c_black);
 draw_text_transformed(_x + 875 * _u, _y + 19 * _u, _nombre_arma, 0.80 * _u, 0.80 * _u, 0);

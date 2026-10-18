@@ -1,11 +1,11 @@
 // Funciones compartidas por los enemigos y sus proyectiles.
 
-// ===== Dificultad (subida un 50% el 18 oct) =====
-// Tomar el mismo dano para limpiar a los mismos enemigos cuesta DIF_VIDA * DIF_DANO = 1.225 * 1.225 = ~1.5 veces mas.
+// ===== Dificultad (subida un 50% el 18 oct y otro 25% despues: 1.5 x 1.25 = ~1.88) =====
+// Tomar el mismo dano para limpiar a los mismos enemigos cuesta DIF_VIDA * DIF_DANO = 1.37 * 1.37 = ~1.88 veces mas.
 // DIF_VIDA multiplica la vida de todos los enemigos y jefes al aparecer (o_spawner_oleadas.aparecer); DIF_DANO multiplica
 // todo el dano que reciben el jugador (danar_jugador). Poner los dos en 1 deja el juego como antes.
-#macro DIF_VIDA 1.225
-#macro DIF_DANO 1.225
+#macro DIF_VIDA 1.37
+#macro DIF_DANO 1.37
 
 #macro JUGADOR_RADIO 12   // radio aproximado del cuerpo del jugador (px), para los golpes por distancia
 

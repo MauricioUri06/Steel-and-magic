@@ -96,7 +96,6 @@ flecha_escala = 0.75;  // tamano de la flecha (1 = original, 0.5 = mitad)
 // Para dar monedas desde otro objeto (por ejemplo al recoger una):  o_player.monedas += 1;
 monedas = 0;
 monedas_cobradas = false;   // true cuando las monedas de esta partida ya pasaron al banco (al morir o al ganar)
-debug_monedas = false;   // true: la tecla C suma 5 monedas para probar. Ponlo en false cuando ya haya monedas reales.
 
 dash_niveles = [
     // Estos niveles (mejoras permanentes) suben la DISTANCIA y el DANO del dash. Las cargas y la recarga solo cambian con cartas.
@@ -170,9 +169,6 @@ carga_dist = 0;   // distancia actual de la bola al jugador
 // ===== Mejoras (las dan las cartas) =====
 // mejoras = cuantas veces se tiene cada una | mejoras_max = cuantas veces se puede obtener
 // Para darle una al jugador:  o_player.mejora_subir("dash_cargas");   (devuelve false si ya esta al maximo)
-// Mientras debug_mejoras sea true:  tecla 7 = +1 carga de dash | 8 = dash recarga mas rapido | 9 = un tajo mas del caballero
-// (antes eran 1, 2 y 3, pero ahora esas teclas cambian de clase)
-debug_mejoras = false;
 // Cada carta tiene su id aqui (ver cartas_def mas abajo): el nivel actual en mejoras y el maximo en mejoras_max.
 mejoras = {
     curacion: 0, armadura: 0, vel_ataque: 0,                            // generales
@@ -248,7 +244,7 @@ p_saliendo = false;                   // true al elegir "Menu principal"
 p_cambiando = false;
 p_alpha_salida = 0;
 p_anim_vel = 0.45;
-p_botones = [ { accion: "reanudar", frame: 0, spr: -1 }, { accion: "menu", frame: 0, spr: -1 } ];
+p_botones = [ { accion: "reanudar", frame: 0, spr: -1 }, { accion: "opciones", frame: 0, spr: -1 }, { accion: "menu", frame: 0, spr: -1 } ];
 p_frames = sprite_get_number(s_boton_menu);
 p_esc = 2;                            // el boton de 192x48 se dibuja a 384x96
 p_w = sprite_get_width(s_boton_menu) * p_esc;
@@ -287,6 +283,11 @@ if (!variable_global_exists("pausa_ui") || is_undefined(global.pausa_ui)) {
         spr_reanudar: _crear("Reanudar", _fp),
         spr_menu:     _crear("Menú principal", _fp),
         spr_mejoras:  _crear("Mejoras", _fp),
+        spr_opciones: _crear("Options", _fp),            // boton de la pausa
+        spr_opt_titulo: _crear("OPTIONS", _ft),           // titulo de la pantalla de opciones de la pausa
+        spr_opt_musica: _crear("Música", _fp),
+        spr_opt_efectos: _crear("Efectos", _fp),
+        spr_volver:   _crear("Volver", _fp),
         spr_fallo:    _crear("HAS FALLADO", _ft),
         spr_acto1:    _crear("ACTO I", _ft),
         spr_acto2:    _crear("ACTO II", _ft),
@@ -296,11 +297,80 @@ if (!variable_global_exists("pausa_ui") || is_undefined(global.pausa_ui)) {
     font_delete(_ft);
 }
 p_botones[0].spr = global.pausa_ui.spr_reanudar;
-p_botones[1].spr = global.pausa_ui.spr_menu;
+p_botones[1].spr = global.pausa_ui.spr_opciones;
+p_botones[2].spr = global.pausa_ui.spr_menu;
 
 // centro vertical del boton _i en la pantalla (coordenadas GUI)
 p_cy = function(_i) {
     return display_get_gui_height() / 2 - 32 + _i * (p_h + p_sep);
+};
+
+// ===== Opciones de sonido dentro de la pausa (boton Options) =====
+// Mismas barras que el menu principal (global.vol_musica y global.vol_efectos, ver scr_musica); se guardan al soltar y al volver.
+p_pantalla = "pausa";            // "pausa" (Reanudar / Options / Menu principal) u "opciones"
+p_opt_sel = 0;                   // barra resaltada con el teclado
+p_opt_arrastre = -1;             // barra que se arrastra con el mouse (-1 = ninguna)
+p_opt_filas = ["vol_musica", "vol_efectos"];
+p_opt_volver_hover = false;
+p_opt_volver_snd = false;
+p_volver = { frame: 0 };         // animacion del boton Volver
+p_opt_geom = function() {
+    var _gw = display_get_gui_width();
+    var _gh = display_get_gui_height();
+    return { x0: _gw / 2 - 170, w: 380, y0: _gh / 2 - 30, sep: 90 };
+};
+p_opt_set = function(_i, _v) {
+    variable_global_set(p_opt_filas[_i], clamp(_v, 0, 1));
+    opciones_audio_aplicar();
+};
+
+pausa_opciones_actualizar = function() {
+    var _gw = display_get_gui_width();
+    var _mx = device_mouse_x_to_gui(0);
+    var _my = device_mouse_y_to_gui(0);
+    var _g = p_opt_geom();
+    // teclado: W/S elige la barra, A/D (o flechas) la mueve de 5 en 5 %
+    if (keyboard_check_pressed(vk_down) || keyboard_check_pressed(ord("S"))) p_opt_sel = (p_opt_sel + 1) mod 2;
+    if (keyboard_check_pressed(vk_up)   || keyboard_check_pressed(ord("W"))) p_opt_sel = (p_opt_sel - 1 + 2) mod 2;
+    var _dx = (keyboard_check_pressed(vk_right) || keyboard_check_pressed(ord("D"))) - (keyboard_check_pressed(vk_left) || keyboard_check_pressed(ord("A")));
+    if (_dx != 0) {
+        p_opt_set(p_opt_sel, round((variable_global_get(p_opt_filas[p_opt_sel]) + _dx * 0.05) * 20) / 20);
+        opciones_audio_guardar();
+        if (p_opt_sel == 1) sfx_play(sfx_boton_clic);   // para oir el nivel de los efectos
+    }
+    // mouse: arrastrar la barra
+    if (p_bloqueo <= 0 && mouse_check_button_pressed(mb_left)) {
+        for (var _i = 0; _i < 2; _i++) {
+            var _cy = _g.y0 + _i * _g.sep;
+            if (point_in_rectangle(_mx, _my, _g.x0 - 14, _cy - 22, _g.x0 + _g.w + 14, _cy + 22)) { p_opt_arrastre = _i; p_opt_sel = _i; }
+        }
+    }
+    if (p_opt_arrastre >= 0) {
+        if (mouse_check_button(mb_left)) {
+            var _v = clamp(round((_mx - _g.x0) / _g.w * 100) / 100, 0, 1);
+            if (_v != variable_global_get(p_opt_filas[p_opt_arrastre])) p_opt_set(p_opt_arrastre, _v);
+        } else {
+            opciones_audio_guardar();
+            if (p_opt_arrastre == 1) sfx_play(sfx_boton_clic);
+            p_opt_arrastre = -1;
+        }
+    }
+    // boton Volver (Esc, Backspace o Enter tambien)
+    var _cyv = p_cy(2);
+    p_opt_volver_hover = point_in_rectangle(_mx, _my, _gw / 2 - p_w / 2, _cyv - p_h / 2, _gw / 2 + p_w / 2, _cyv + p_h / 2);
+    if (p_opt_volver_hover && !p_opt_volver_snd) sfx_play(sfx_boton_hover);
+    p_opt_volver_snd = p_opt_volver_hover;
+    var _volver = (p_bloqueo <= 0) && ((p_opt_volver_hover && mouse_check_button_pressed(mb_left))
+                  || keyboard_check_pressed(vk_escape) || keyboard_check_pressed(vk_backspace) || keyboard_check_pressed(vk_enter));
+    if (_volver) {
+        opciones_audio_guardar();
+        p_opt_arrastre = -1;
+        sfx_play(sfx_boton_clic);
+        p_pantalla = "pausa";
+        p_sel = -1;
+        p_modo_mouse = true;
+        p_bloqueo = 10;
+    }
 };
 
 // Se llama al inicio de cada Step (incluso en pausa): maneja el fundido, Esc y los botones del menu de pausa.
@@ -321,7 +391,6 @@ pausa_actualizar = function() {
             p_cambiando = true;
             // Aqui room_goto(rm_menu) NO cambiaba de room (probado: rm_menu, room_first y por nombre). game_restart() si funciona
             // y deja el juego en la primera room (el menu). Antes se liberan los recursos creados a mano, para que no queden handles invalidos.
-            show_debug_message("[pausa] volviendo al menu con game_restart()");
             cartas_liberar();
             if (sprite_exists(spr_captura)) sprite_delete(spr_captura);
             spr_captura = -1;
@@ -330,6 +399,11 @@ pausa_actualizar = function() {
                 sprite_delete(global.pausa_ui.spr_reanudar);
                 sprite_delete(global.pausa_ui.spr_menu);
                 sprite_delete(global.pausa_ui.spr_mejoras);
+                sprite_delete(global.pausa_ui.spr_opciones);
+                sprite_delete(global.pausa_ui.spr_opt_titulo);
+                sprite_delete(global.pausa_ui.spr_opt_musica);
+                sprite_delete(global.pausa_ui.spr_opt_efectos);
+                sprite_delete(global.pausa_ui.spr_volver);
                 sprite_delete(global.pausa_ui.spr_fallo);
                 sprite_delete(global.pausa_ui.spr_acto1);
                 sprite_delete(global.pausa_ui.spr_acto2);
@@ -364,6 +438,9 @@ pausa_actualizar = function() {
     }
     else {
         // en pausa
+        if (p_pantalla == "opciones") {
+            pausa_opciones_actualizar();
+        } else {
         if (_mx != p_mx || _my != p_my) p_modo_mouse = true;
         var _bajo = -1;
         for (var _i = 0; _i < _n; _i++) {
@@ -398,11 +475,17 @@ pausa_actualizar = function() {
             spr_captura = -1;
             global.pausa = false;
             p_bloqueo = 10;
+        } else if (_accion == "opciones") {
+            sfx_play(sfx_boton_clic);
+            p_pantalla = "opciones";
+            p_opt_sel = 0;
+            p_opt_arrastre = -1;
+            p_bloqueo = 10;
         } else if (_accion == "menu") {
             sfx_play(sfx_boton_clic);
             p_saliendo = true;
-            show_debug_message("[pausa] elegido: Menu principal");
         }
+        }   // fin de la pantalla principal de la pausa (la otra es "opciones")
     }
     p_mx = _mx;
     p_my = _my;
@@ -413,6 +496,8 @@ pausa_actualizar = function() {
         var _meta = (global.pausa && _j == _resaltado) ? p_frames - 1 : 0;
         _b.frame += clamp(_meta - _b.frame, -p_anim_vel, p_anim_vel);
     }
+    var _meta_v = (global.pausa && p_pantalla == "opciones" && p_opt_volver_hover) ? p_frames - 1 : 0;
+    p_volver.frame += clamp(_meta_v - p_volver.frame, -p_anim_vel, p_anim_vel);
 };
 
 // Draw GUI, al INICIO: foto del juego oscurecida (la interfaz del jugador se dibuja encima)
@@ -439,6 +524,55 @@ pausa_dibujar_fondo = function() {
     if (muerto) muerte_dibujar_anim();   // animacion de caida encima de la foto (la foto se toma sin el jugador)
 };
 
+// Draw GUI: pantalla de opciones de la pausa (titulo, dos barras de volumen y boton Volver)
+pausa_opciones_dibujar = function() {
+    var _gw = display_get_gui_width();
+    var _g = p_opt_geom();
+    var _oro = make_colour_rgb(255, 214, 102);
+    var _oro_osc = make_colour_rgb(201, 128, 30);
+    var _cian = make_colour_rgb(110, 235, 255);
+    var _txt = make_colour_rgb(225, 230, 240);
+    var _ty = p_cy(0) - p_h / 2 - 60;
+    draw_sprite_ext(global.pausa_ui.spr_opt_titulo, 0, _gw / 2 + 4, _ty + 4, 4, 4, 0, c_black, 0.7);
+    draw_sprite_ext(global.pausa_ui.spr_opt_titulo, 0, _gw / 2,     _ty,     4, 4, 0, _oro, 1);
+    var _spr_filas = [global.pausa_ui.spr_opt_musica, global.pausa_ui.spr_opt_efectos];
+    draw_set_alpha(1);
+    for (var _i = 0; _i < 2; _i++) {
+        var _v = variable_global_get(p_opt_filas[_i]);
+        var _cy = _g.y0 + _i * _g.sep;
+        var _sel = (p_opt_sel == _i);
+        draw_sprite_ext(_spr_filas[_i], 0, _g.x0 - 110, _cy, 2, 2, 0, _sel ? _oro : _txt, 1);
+        draw_set_color(make_colour_rgb(30, 40, 58));
+        draw_rectangle(_g.x0, _cy - 6, _g.x0 + _g.w, _cy + 6, false);
+        draw_set_color(_oro_osc);
+        draw_rectangle(_g.x0, _cy - 6, _g.x0 + _g.w * _v, _cy + 6, false);
+        draw_set_color(_sel ? _oro : _cian);
+        draw_rectangle(_g.x0 - 1, _cy - 7, _g.x0 + _g.w + 1, _cy + 7, true);
+        var _kx = _g.x0 + _g.w * _v;
+        draw_set_color(_oro);
+        draw_rectangle(_kx - 8, _cy - 16, _kx + 8, _cy + 16, false);
+        draw_set_color(_oro_osc);
+        draw_rectangle(_kx - 8, _cy - 16, _kx + 8, _cy + 16, true);
+        draw_set_color(_cian);
+        draw_set_font(-1);
+        draw_set_halign(fa_left);
+        draw_set_valign(fa_middle);
+        draw_text_transformed(_g.x0 + _g.w + 28, _cy, string(round(_v * 100)) + "%", 2, 2, 0);
+    }
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+    draw_set_color(c_white);
+    // boton Volver (el tercer lugar de la pausa)
+    var _cyv = p_cy(2);
+    var _f = clamp(floor(p_volver.frame), 0, p_frames - 1);
+    draw_sprite_ext(s_boton_menu, _f, _gw / 2 - p_w / 2, _cyv - p_h / 2, p_esc, p_esc, 0, c_white, 1);
+    var _t = p_volver.frame / (p_frames - 1);
+    var _col = merge_colour(make_colour_rgb(70, 38, 8), _cian, _t);
+    var _sombra = merge_colour(make_colour_rgb(255, 224, 130), make_colour_rgb(4, 18, 28), _t);
+    draw_sprite_ext(global.pausa_ui.spr_volver, 0, _gw / 2, _cyv + p_esc, p_esc, p_esc, 0, _sombra, 1);
+    draw_sprite_ext(global.pausa_ui.spr_volver, 0, _gw / 2, _cyv,         p_esc, p_esc, 0, _col, 1);
+};
+
 // Draw GUI, al FINAL: titulo y botones de la pausa + fundidos (entrada al nivel y salida al menu)
 pausa_dibujar_ui = function() {
     var _gw = display_get_gui_width();
@@ -446,7 +580,9 @@ pausa_dibujar_ui = function() {
     var _tf = gpu_get_texfilter();
     gpu_set_texfilter(false);
 
-    if (global.pausa && !p_cambiando) {
+    if (global.pausa && !p_cambiando && p_pantalla == "opciones") {
+        pausa_opciones_dibujar();
+    } else if (global.pausa && !p_cambiando) {
         // titulo pixelado: cada pixel de la letra = 4 pixeles de pantalla
         var _ty = p_cy(0) - p_h / 2 - 60;
         draw_sprite_ext(global.pausa_ui.spr_pausa, 0, _gw / 2 + 4, _ty + 4, 4, 4, 0, c_black, 0.7);
@@ -481,13 +617,9 @@ pausa_dibujar_ui = function() {
 };
 
 // ===== Muerte =====
-// - Mantener la tecla P 3 s mata al jugador (solo para probar, mientras debug_morir sea true). Tambien muere solo si hp llega a 0.
 // - Al morir: se congela todo lo demas, la pantalla se pone negra lentamente y aparece "HAS FALLADO" en rojo con dos botones:
 //   "Mejoras" y "Menu principal". Ambos vuelven al menu con game_restart() (igual que la pausa); "Mejoras" deja el menu abierto en esa pantalla.
 // - Para matar al jugador desde otro objeto:  o_player.morir();
-debug_morir     = false;   // true: mantener P 3 s mata al jugador (solo para probar)
-morir_seg       = 3;      // segundos que hay que mantener P
-morir_t         = 0;      // pasos que lleva apretada
 muerto          = false;
 // Secuencia de la muerte: 1) en muerte_intro_seg todo alrededor se pone negro (queda solo una luz sobre el jugador) y la camara se acerca a el;
 // 2) se reproduce la animacion de caida (muerte_anim_seg); 3) se queda mirandolo caido (muerte_pausa_seg); 4) la luz se cierra y la pantalla queda negra
@@ -615,7 +747,6 @@ morir = function() {
     muerte_anim_t = 0;
     muerte_captura_pend = true;   // Draw_0 ya no dibuja al jugador; la foto y el congelado ocurren en muerte_actualizar, en el siguiente Step
     sfx_jingle(sfx_muerte);       // violin triste; la musica del acto se calla (ver scr_musica)
-    show_debug_message("[muerte] el jugador murio");
 };
 
 // Se llama al inicio de cada Step (despues de pausa_actualizar): detecta la muerte y maneja la pantalla de "HAS FALLADO".
@@ -623,13 +754,7 @@ muerte_actualizar = function() {
     var _fps = game_get_speed(gamespeed_fps);
 
     if (!muerto) {
-        // jugando: P apretada 3 s (prueba) o sin vida
-        if (debug_morir && !global.pausa && !cartas_abierto && !mejoras_abierto && keyboard_check(ord("P"))) {
-            morir_t += 1;
-            if (morir_t >= morir_seg * _fps) morir();
-        } else {
-            morir_t = 0;
-        }
+        // jugando: muere al quedarse sin vida
         if (!global.pausa && hp <= 0) morir();
         return;
     }
@@ -688,7 +813,6 @@ muerte_actualizar = function() {
             // se guarda en arranque.ini antes de reiniciar (ver pausa_actualizar); o_menu abre directo la pantalla Mejoras
             p_menu_pantalla = (_accion == "mejoras") ? "mejoras" : "principal";
             p_saliendo = true;   // pausa_actualizar libera los recursos y llama a game_restart()
-            show_debug_message("[muerte] elegido: " + _accion);
         }
     }
     m_mx = _mx;
@@ -803,7 +927,6 @@ if (file_exists("arranque.ini")) {
 // - Cada nivel pide mas experiencia que el anterior:  xp_necesaria(nivel) = xp_base * xp_crece ^ (nivel - 1)
 // - Para sumar una carta nueva: agregarla a cartas_def (sprite + id de mejora), a mejoras / mejoras_max (mas arriba) y darle su efecto.
 // - Para que los enemigos le hagan dano al jugador:   o_player.recibir_dano(cantidad);   (la armadura lo reduce y el dash lo evita)
-debug_cartas = false;    // true: X = +5 de experiencia, K = cuenta un enemigo derrotado (+1 xp), H = recibes 5 de dano. Ponlo en false cuando haya enemigos.
 nivel        = 1;
 nivel_max    = 12;       // al llegar aqui ya no se sube mas (la experiencia deja de sumar)
 xp           = 0;
@@ -976,7 +1099,6 @@ apostar = function() {
         sfx_play(sfx_apuesta_pierde);
     }
     apuesta_msg_t = 150;
-    show_debug_message("[apuesta] " + apuesta_msg);
 };
 apuesta_dibujar = function() {   // se llama desde Draw_64
     if (apuesta_msg_t <= 0 || muerto || cartas_abierto || mejoras_abierto) return;
@@ -1013,7 +1135,6 @@ ganar_xp = function(_cantidad) {
         _subio = true;
         xp_sig = xp_necesaria(nivel);
         if (!cartas_bloqueadas()) cartas_pendientes += 1;   // tras vencer al jefe final se sigue subiendo de nivel, pero sin cartas
-        show_debug_message("[xp] subiste al nivel " + string(nivel) + " (siguiente nivel: " + string(xp_sig) + " xp)");
     }
     if (_subio) sfx_play(sfx_nivel, 0.9);
     if (nivel >= nivel_max) xp = 0;
@@ -1232,7 +1353,6 @@ cartas_actualizar = function() {
         if (sprite_exists(spr_captura)) sprite_delete(spr_captura);
         spr_captura = sprite_create_from_surface(application_surface, 0, 0, surface_get_width(application_surface), surface_get_height(application_surface), false, false, 0, 0);
         instance_deactivate_all(true);   // igual que la pausa: congela todo lo demas
-        show_debug_message("[cartas] nivel " + string(nivel) + ": " + string(array_length(_op)) + " carta(s) para elegir");
         return;
     }
 
@@ -1316,7 +1436,6 @@ cartas_actualizar = function() {
         if (_carta.mejora != "apuesta") sfx_play(sfx_carta_confirmar);   // la Apuesta suena segun el resultado (ver apostar)
         mejora_subir(_carta.mejora);
         cartas_pendientes -= 1;
-        show_debug_message("[cartas] elegida: " + _carta.nombre + " (nivel " + string(mejoras[$ _carta.mejora]) + ")");
         cartas_abierto = false;
         instance_activate_all();
         if (sprite_exists(spr_captura)) sprite_delete(spr_captura);
@@ -1537,4 +1656,3 @@ mejoras_dibujar_ui = function() {
     draw_set_color(c_white);
 };
 
-show_debug_message("[o_player] pausa y fundido listos. alpha_entrada = " + string(alpha_entrada));

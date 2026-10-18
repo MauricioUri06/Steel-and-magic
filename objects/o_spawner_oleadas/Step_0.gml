@@ -34,14 +34,6 @@ if (jefe_actual != noone && (!instance_exists(jefe_actual) || !jefe_actual.es_en
     }
 }
 
-// ===== Prueba: U mata a toda la oleada (vivos, jefe incluido, y los que faltaban salir) y lanza la siguiente =====
-if (debug_matar && keyboard_check_pressed(ord("U"))) {
-    cola = [];
-    with (o_enemigo_base) if (es_enemigo) morir();   // muerte normal: sueltan xp y se cuentan las bajas
-    // si murio un jefe que lleva a otro acto, no se lanza nada: el cambio de acto empieza en el proximo paso
-    if (oleada < total_oleadas && jefe_sala == -1) lanzar_oleada();
-}
-
 var _vivos = 0;
 with (o_enemigo_base) if (es_enemigo) _vivos += 1;
 
@@ -71,4 +63,4 @@ if (_jefe || (array_length(cola) > 0 && oleada mod 10 == 0)) exit;   // tambien 
 // si ya no queda ningun enemigo vivo, la siguiente llega enseguida
 if (oleada > 0 && array_length(cola) == 0 && _vivos == 0) timer = min(timer, tras_limpiar);
 timer -= 1;
-if (timer <= 0 || (debug && keyboard_check_pressed(ord("N")))) lanzar_oleada();
+if (timer <= 0) lanzar_oleada();

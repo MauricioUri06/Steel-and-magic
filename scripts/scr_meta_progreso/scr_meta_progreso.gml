@@ -8,9 +8,6 @@ function meta_inicializar() {
         archivo: "steel_magic_meta.ini",
         version_guardado: 1,
         monedas_banco: 0,
-        monedas_run: 0,
-        ultima_recompensa: 0,
-        room_inicio: -1,
         record: {
             tiene_record: false,
             victorias: 0,
@@ -47,8 +44,6 @@ function meta_cargar() {
     var _version = floor(ini_read_real("progreso", "version", 0));
     if (_version < _meta.version_guardado) {
         _meta.monedas_banco = 0;
-        _meta.monedas_run = 0;
-        _meta.ultima_recompensa = 0;
         for (var _r = 0; _r < array_length(_meta.mejoras); _r++) {
             var _mejora_prueba = _meta.mejoras[_r];
             _mejora_prueba.nivel = 0;
@@ -116,21 +111,16 @@ function meta_comprar_mejora(_indice) {
     return true;
 }
 
-/// Reinicia solo los niveles de las mejoras permanentes.
-/// Las monedas, los records y las victorias pertenecen a otros progresos.
+/// Reinicia los niveles de las mejoras permanentes y deja las monedas del banco en 0.
+/// Los records y las victorias se conservan.
 function meta_reiniciar_mejoras() {
     meta_inicializar();
+    global.meta_progreso.monedas_banco = 0;
     var _mejoras = global.meta_progreso.mejoras;
     for (var _i = 0; _i < array_length(_mejoras); _i++) {
         _mejoras[_i].nivel = 0;
     }
     meta_guardar();
-}
-
-function meta_sumar_monedas_run(_cantidad) {
-    meta_inicializar();
-    global.meta_progreso.monedas_run += max(0, floor(_cantidad));
-    return global.meta_progreso.monedas_run;
 }
 
 /// Transfiere al banco las monedas obtenidas en la partida y guarda el progreso.
@@ -143,48 +133,8 @@ function meta_cobrar_monedas_run(_cantidad) {
     var _recompensa = floor(_monedas * _bonus);
 
     _meta.monedas_banco += _recompensa;
-    _meta.monedas_run = 0;
-    _meta.ultima_recompensa = _recompensa;
     meta_guardar();
     return _recompensa;
-}
-
-function meta_asegurar_controlador() {
-    var _controlador = instance_find(o_meta_manager, 0);
-    if (_controlador == noone) {
-        _controlador = instance_create_depth(0, 0, -100000, o_meta_manager);
-    }
-    return _controlador;
-}
-
-function meta_abrir_menu_muerte() {
-    meta_inicializar();
-    var _meta = global.meta_progreso;
-
-    // Permite que el sistema de enemigos entregue directamente las monedas de la run.
-    if (argument_count > 0) _meta.monedas_run = max(0, floor(argument[0]));
-
-    meta_cobrar_monedas_run(_meta.monedas_run);
-
-    var _controlador = meta_asegurar_controlador();
-    with (_controlador) {
-        menu_abierto = true;
-        captura_lista = false;
-        mundo_pausado = false;
-        compra_realizada = false;
-        fila_hover = -1;
-        boton_salida_hover = false;
-    }
-}
-
-function meta_menu_abierto() {
-    var _controlador = instance_find(o_meta_manager, 0);
-    return (_controlador != noone) && _controlador.menu_abierto;
-}
-
-function meta_configurar_room_inicio(_room) {
-    meta_inicializar();
-    global.meta_progreso.room_inicio = _room;
 }
 
 function meta_obtener_bonos() {

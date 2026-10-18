@@ -4,7 +4,6 @@ if (ir_menu) {
     alpha_entrada = 1;           // por si se alcanza a dibujar un cuadro: que sea negro
     persistent = false;          // este jugador no debe seguir vivo en el menu
     ir_menu_espera = 30;
-    show_debug_message("[reinicio] volviendo al menu desde " + room_get_name(room));
     room_goto(rm_menu);
     exit;
 }
@@ -12,7 +11,6 @@ if (ir_menu_espera > 0) {
     ir_menu_espera -= 1;
     if (ir_menu_espera > 0) exit;
     // pasaron 30 pasos y sigue la misma room: el cambio no funciono, se sigue jugando aqui
-    show_debug_message("[reinicio] room_goto no cambio de room (room actual: " + room_get_name(room) + ")");
     alpha_entrada = 0;
     persistent = true;
 }
@@ -58,17 +56,6 @@ for (var _i = array_length(espejismos) - 1; _i >= 0; _i--) {
 explosiones_actualizar();   // anillos de las balas explosivas y mensaje de la apuesta
 
 // ===== Nivel del dash segun las monedas =====
-if (debug_monedas && keyboard_check_pressed(ord("C"))) monedas += 5;   // solo para probar
-if (debug_mejoras) {                                                   // solo para probar
-    if (keyboard_check_pressed(ord("7"))) mejora_subir("dash_cargas");
-    if (keyboard_check_pressed(ord("8"))) mejora_subir("dash_recarga");
-    if (keyboard_check_pressed(ord("9"))) mejora_subir("doble_tajo");
-}
-if (debug_cartas) {                                                    // solo para probar
-    if (keyboard_check_pressed(ord("X"))) ganar_xp(5);
-    if (keyboard_check_pressed(ord("K"))) enemigo_derrotado(1);
-    if (keyboard_check_pressed(ord("H"))) recibir_dano(5);
-}
 var _nv = 0;
 for (var _i = 0; _i < array_length(dash_niveles); _i++) {
     if (monedas >= dash_niveles[_i].monedas) _nv = _i;

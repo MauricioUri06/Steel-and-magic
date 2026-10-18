@@ -27,13 +27,10 @@ my_prev = _my;
 
 var _resaltado = -1;      // boton que se ve mecanico
 volver_hover = false;
-<<<<<<< HEAD
 opt_hover = false;
-=======
 meta_reset_hover = false;
 meta_confirm_cancel_hover = false;
 meta_confirm_reset_hover = false;
->>>>>>> bc5c0fb533b438faed69e713ba8fe290103d4506
 
 if (!fade_saliendo) {
     if (pantalla == "principal") {
@@ -135,7 +132,7 @@ if (!fade_saliendo) {
             var _ccx = room_width * 0.5 - 145 * _mu;
             var _crx = room_width * 0.5 + 145 * _mu;
             var _cby = room_height * 0.5 + 92 * _mu;
-            var _cbw = 240 * _mu, _cbh = 64 * _mu;
+            var _cbw = sprite_get_width(s_boton_menu) * _mu, _cbh = sprite_get_height(s_boton_menu) * _mu;   // mismos botones que se dibujan en Draw
             meta_confirm_cancel_hover = point_in_rectangle(_mx, _my, _ccx - _cbw * 0.5, _cby - _cbh * 0.5, _ccx + _cbw * 0.5, _cby + _cbh * 0.5);
             meta_confirm_reset_hover = point_in_rectangle(_mx, _my, _crx - _cbw * 0.5, _cby - _cbh * 0.5, _crx + _cbw * 0.5, _cby + _cbh * 0.5);
 
@@ -209,3 +206,9 @@ var _meta_v = (pantalla != "principal" && volver_hover) ? frames_boton - 1 : 0;
 volver_frame += clamp(_meta_v - volver_frame, -anim_vel, anim_vel);
 var _meta_o = (pantalla == "principal" && opt_hover) ? frames_boton - 1 : 0;
 opt_frame += clamp(_meta_o - opt_frame, -anim_vel, anim_vel);
+// botones de la confirmacion de reinicio de mejoras
+var _confirma = (pantalla == "mejoras" && meta_confirmacion_abierta);
+var _meta_cc = (_confirma && meta_confirmacion_sel == 0) ? frames_boton - 1 : 0;
+var _meta_cr = (_confirma && meta_confirmacion_sel == 1) ? frames_boton - 1 : 0;
+meta_cancel_frame += clamp(_meta_cc - meta_cancel_frame, -anim_vel, anim_vel);
+meta_reset_frame += clamp(_meta_cr - meta_reset_frame, -anim_vel, anim_vel);
