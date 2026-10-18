@@ -15,7 +15,7 @@ move_speed = 5;
 hp = 30;
 hp_max = 30;   // vida maxima (la curacion no pasa de aqui)
 
-// ===== Clases (se cambian con la rueda del mouse) =====
+// ===== Clases (se cambian con las teclas 1 = Caballero, 2 = Mago, 3 = Soldado; tambien el teclado numerico) =====
 clases        = ["cab", "mago", "sol"];
 nombres_clase = ["Caballero", "Mago", "Soldado"];
 clase_idx     = 0;                    // empieza con caballero
@@ -110,7 +110,9 @@ dash_dir     = 0;                          // angulo del dash
 dash_vel     = 0;                          // px por paso
 dash_radio   = 26;                         // radio (px) alrededor del jugador que golpea a los enemigos
 dash_golpeados = {};                       // enemigos ya golpeados en este dash (cada uno recibe dano una sola vez)
-inmune       = false;                      // true mientras dura el dash (usalo cuando los enemigos hagan dano)
+inmune       = false;                      // true mientras dura el dash y un instante despues (usalo cuando los enemigos hagan dano)
+dash_gracia  = 6;                          // pasos extra de invulnerabilidad al terminar el dash (60 = 1 s; 0 = solo mientras te desplazas)
+inmune_gracia = 0;                         // cuenta regresiva de esos pasos extra
 
 // Espejismos: copias del jugador que se quedan atras y se desvanecen
 espejismos      = [];                      // cada uno: {x, y, spr, img, esc, vida}
@@ -124,7 +126,7 @@ espejismo_color = make_colour_rgb(90, 220, 255);   // tinte (cian)
 // cadencia = disparos por segundo con el clic mantenido (0 = lo que dure la animacion de ataque)
 // El mago todavia no tiene proyectil (no esta en la lista).
 proy = {
-    cab: { obj: o_proyectil_caballero, frame: 2, dano: 4, escala: 2, dist: 26, cadencia: 0 },
+    cab: { obj: o_proyectil_caballero, frame: 2, dano: 5, escala: 2.6, dist: 32, cadencia: 0 },   // (antes dano 4, escala 2, dist 26: el caballero se sentia debil)
     sol: { obj: o_proyectil_soldado,   frame: 2, dano: 2, escala: 1, dist: 30, cadencia: 5 }
 };
 proy_pendiente = false;   // hay un proyectil por salir en el ataque actual
@@ -161,8 +163,9 @@ carga_dist = 0;   // distancia actual de la bola al jugador
 // ===== Mejoras (las dan las cartas) =====
 // mejoras = cuantas veces se tiene cada una | mejoras_max = cuantas veces se puede obtener
 // Para darle una al jugador:  o_player.mejora_subir("dash_cargas");   (devuelve false si ya esta al maximo)
-// Mientras debug_mejoras sea true:  tecla 1 = +1 carga de dash | 2 = dash recarga mas rapido | 3 = un tajo mas del caballero
-debug_mejoras = true;
+// Mientras debug_mejoras sea true:  tecla 7 = +1 carga de dash | 8 = dash recarga mas rapido | 9 = un tajo mas del caballero
+// (antes eran 1, 2 y 3, pero ahora esas teclas cambian de clase)
+debug_mejoras = false;
 // Cada carta tiene su id aqui (ver cartas_def mas abajo): el nivel actual en mejoras y el maximo en mejoras_max.
 mejoras = {
     curacion: 0, armadura: 0, vel_ataque: 0,                            // generales
@@ -201,9 +204,9 @@ dash_cd         = dash_niveles[0].cd;
 // Tajos del caballero segun mejoras.doble_tajo + mejoras.tajo_triangular (0, 1 o 2): cada tajo = [adelante (px), lateral (px), desvio de angulo]
 // 1 tajo: al frente | 2 tajos: lado a lado (carta Doble tajo) | 3 tajos: en triangulo (ademas, la carta Tajo triangular)
 tajos_formacion = [
-    [ [26, 0, 0] ],
-    [ [26, -16, -8], [26, 16, 8] ],
-    [ [50, 0, 0], [26, -30, -24], [26, 30, 24] ]
+    [ [32, 0, 0] ],
+    [ [32, -20, -8], [32, 20, 8] ],
+    [ [58, 0, 0], [32, -38, -24], [32, 38, 24] ]
 ];
 
 // ===== Colision con paredes (o_solid) =====
@@ -212,6 +215,7 @@ col_izq = 10;   // px hacia la izquierda del centro
 col_der = 10;   // px hacia la derecha
 col_arr = 0;    // px hacia arriba (0 = la caja empieza en el centro)
 col_aba = 16;   // px hacia abajo (llega a los pies)
+hud_alto_gui = 81;   // alto (px de un GUI de 1280x720) que el panel de stats tapa en el borde de abajo de la pantalla: el jugador no baja mas alla (ver Step_0)
 colision_solido = function(_x, _y) {
     return collision_rectangle(_x - col_izq, _y - col_arr, _x + col_der, _y + col_aba, o_solid, false, true) != noone;
 };
@@ -333,6 +337,7 @@ pausa_actualizar = function() {
             ini_write_string("arranque", "pantalla", p_menu_pantalla);
             ini_close();
             audio_stop_all();   // si sonaba un jingle (por ejemplo el de muerte), se corta: la musica del menu arranca limpia
+            musica_reiniciar();   // los globales de la musica sobreviven a game_restart: sin esto el menu y los actos quedaban mudos tras morir
             game_restart();
         }
     }
@@ -342,6 +347,8 @@ pausa_actualizar = function() {
             // foto del ultimo cuadro (sin interfaz) para seguir viendo el juego detras del menu
             spr_captura = sprite_create_from_surface(application_surface, 0, 0, surface_get_width(application_surface), surface_get_height(application_surface), false, false, 0, 0);
             global.pausa = true;
+            sfx_play(sfx_menu_abrir);
+            p_sel_snd = -1;
             instance_deactivate_all(true);      // congela todo lo demas (enemigos, proyectiles, efectos...); el jugador sigue activo
             p_sel = -1;
             p_modo_mouse = true;
@@ -365,6 +372,10 @@ pausa_actualizar = function() {
         }
         if (p_modo_mouse) p_sel = _bajo;
         _resaltado = p_sel;
+        if (_resaltado != p_sel_snd) {
+            if (_resaltado >= 0) sfx_play(sfx_boton_hover);
+            p_sel_snd = _resaltado;
+        }
 
         var _clic  = (p_bloqueo <= 0) && mouse_check_button_pressed(mb_left) && _bajo >= 0;
         var _enter = (p_bloqueo <= 0) && (keyboard_check_pressed(vk_enter) || keyboard_check_pressed(vk_space));
@@ -374,12 +385,14 @@ pausa_actualizar = function() {
         if (keyboard_check_pressed(vk_escape) && p_bloqueo <= 0) _accion = "reanudar";   // Esc otra vez = reanudar
 
         if (_accion == "reanudar") {
+            sfx_play(sfx_menu_cerrar);
             instance_activate_all();
             if (sprite_exists(spr_captura)) sprite_delete(spr_captura);
             spr_captura = -1;
             global.pausa = false;
             p_bloqueo = 10;
         } else if (_accion == "menu") {
+            sfx_play(sfx_boton_clic);
             p_saliendo = true;
             show_debug_message("[pausa] elegido: Menu principal");
         }
@@ -403,7 +416,14 @@ pausa_dibujar_fondo = function() {
         draw_set_color(c_black);
         draw_set_alpha(1);
         draw_rectangle(-1, -1, _gw + 1, _gh + 1, false);
-        draw_sprite_stretched(spr_captura, 0, 0, 0, _gw, _gh);
+        if (muerto) {
+            // al morir la camara se acerca al jugador: la foto se agranda alrededor de el (ver muerte_foco)
+            var _fo = muerte_foco();
+            draw_sprite_ext(spr_captura, 0, _fo.ax - _fo.px * _fo.z, _fo.ay - _fo.py * _fo.z,
+                            _gw / sprite_get_width(spr_captura) * _fo.z, _gh / sprite_get_height(spr_captura) * _fo.z, 0, c_white, 1);
+        } else {
+            draw_sprite_stretched(spr_captura, 0, 0, 0, _gw, _gh);
+        }
         draw_set_alpha(global.pausa ? 0.5 : ((cartas_abierto || mejoras_abierto) ? 0.65 : 0));   // oscurecido solo en la pausa: sube el numero para oscurecer mas
         draw_rectangle(-1, -1, _gw + 1, _gh + 1, false);
         draw_set_alpha(1);
@@ -437,6 +457,7 @@ pausa_dibujar_ui = function() {
         }
     }
 
+    if (muerto) muerte_dibujar_luz();   // todo alrededor del jugador negro, con una luz sobre el
     var _a = max(alpha_entrada, p_alpha_salida, alpha_muerte);
     if (_a > 0) {
         draw_set_color(c_black);
@@ -461,8 +482,15 @@ debug_morir     = false;   // true: mantener P 3 s mata al jugador (solo para pr
 morir_seg       = 3;      // segundos que hay que mantener P
 morir_t         = 0;      // pasos que lleva apretada
 muerto          = false;
-duracion_muerte = 3;      // segundos hasta que la pantalla queda negra
-muerte_anim_seg = 1.0;    // segundos que dura la animacion de caida (s_muerte_jugador, 6 cuadros)
+// Secuencia de la muerte: 1) en muerte_intro_seg todo alrededor se pone negro (queda solo una luz sobre el jugador) y la camara se acerca a el;
+// 2) se reproduce la animacion de caida (muerte_anim_seg); 3) se queda mirandolo caido (muerte_pausa_seg); 4) la luz se cierra y la pantalla queda negra
+// en duracion_muerte segundos; 5) recien entonces aparece "HAS FALLADO" con los botones.
+muerte_intro_seg  = 0.45;  // segundos que tarda en oscurecer alrededor y enfocar al jugador
+muerte_zoom       = 1.9;   // cuanto se acerca la camara al jugador (1 = nada)
+muerte_luz_radio  = 190;   // radio de la luz alrededor del jugador (px de una pantalla de 1280x720)
+muerte_pausa_seg  = 0.7;   // segundos que se queda mirando al jugador en el suelo antes de cerrarse a negro
+duracion_muerte = 1.0;     // segundos que tarda en cerrarse la luz y quedar negra la pantalla (antes 3)
+muerte_anim_seg = 1.2;    // segundos que dura la animacion de caida (s_muerte_jugador, 6 cuadros; antes 1.0)
 muerte_anim_t   = 0;      // pasos desde que se tomo la foto: avanza la animacion
 muerte_captura_pend = false;   // true = falta tomar la foto (se toma un cuadro despues de morir, con el jugador ya oculto)
 alpha_muerte    = 0;      // 0..1: que tan negra esta la pantalla
@@ -484,10 +512,11 @@ m_cy = function(_i) {
 
 // Dibuja la animacion de muerte encima de la foto congelada (en el Draw GUI). Se ancla a los pies del jugador y sigue a la camara.
 // Los cuadros se reparten en muerte_anim_seg segundos y el ultimo se queda quieto (el jugador en el suelo).
-muerte_dibujar_anim = function() {
-    if (!muerto || muerte_captura_pend || !sprite_exists(spr_captura)) return;
-    var _n = sprite_get_number(s_muerte_jugador);
-    var _f = clamp(floor(muerte_anim_t / (muerte_anim_seg * game_get_speed(gamespeed_fps)) * _n), 0, _n - 1);
+// Enfoque de la camara al morir: la foto se agranda (z) alrededor del jugador (px, py en la pantalla) y el jugador se va hacia el centro (ax, ay).
+// e = 0..1 es el avance del enfoque (rapido al principio). El ancla se limita para que la foto siempre cubra la pantalla.
+muerte_foco = function() {
+    var _gw = display_get_gui_width(), _gh = display_get_gui_height();
+    var _fps = game_get_speed(gamespeed_fps);
     // la foto es la pantalla completa estirada a la GUI: se pasa de coordenadas del mundo a las de la foto
     var _vx = 0, _vy = 0, _vw = room_width, _vh = room_height;
     if (view_enabled && view_visible[0]) {
@@ -497,16 +526,65 @@ muerte_dibujar_anim = function() {
         _vw = camera_get_view_width(_cam);
         _vh = camera_get_view_height(_cam);
     }
-    var _kx = display_get_gui_width() / _vw;
-    var _ky = display_get_gui_height() / _vh;
+    var _kx = _gw / _vw, _ky = _gh / _vh;
+    var _px = (x - _vx) * _kx, _py = (y + 4 - _vy) * _ky;
+    var _e = clamp(muerte_anim_t / _fps / max(0.01, muerte_intro_seg), 0, 1);
+    _e = 1 - power(1 - _e, 3);
+    var _z = lerp(1, muerte_zoom, _e);
+    var _ax = clamp(lerp(_px, _gw / 2, _e), _gw * (1 - _z) + _px * _z, _px * _z);
+    var _ay = clamp(lerp(_py, _gh / 2, _e), _gh * (1 - _z) + _py * _z, _py * _z);
+    return { z: _z, e: _e, px: _px, py: _py, ax: _ax, ay: _ay, kx: _kx, ky: _ky, vx: _vx, vy: _vy };
+};
+
+muerte_dibujar_anim = function() {
+    if (!muerto || muerte_captura_pend || !sprite_exists(spr_captura)) return;
+    var _fps = game_get_speed(gamespeed_fps);
+    var _n = sprite_get_number(s_muerte_jugador);
+    // la caida empieza cuando termina de enfocar
+    var _ta = max(0, muerte_anim_t / _fps - muerte_intro_seg);
+    var _f = clamp(floor(_ta / muerte_anim_seg * _n), 0, _n - 1);
+    var _fo = muerte_foco();
     // el sprite mide 32x32 con los pies en la fila 30: se alinea con los pies del jugador vivo (x, y + 14)
     var _s = escala_jugador;
-    var _gx = (x - 16 * _s - _vx) * _kx;
-    var _gy = (y + 14 - 30 * _s - _vy) * _ky;
+    var _gx0 = (x - 16 * _s - _fo.vx) * _fo.kx;
+    var _gy0 = (y + 14 - 30 * _s - _fo.vy) * _fo.ky;
+    var _gx = _fo.ax + (_gx0 - _fo.px) * _fo.z;
+    var _gy = _fo.ay + (_gy0 - _fo.py) * _fo.z;
     var _tf = gpu_get_texfilter();
     gpu_set_texfilter(false);
-    draw_sprite_ext(s_muerte_jugador, _f, _gx, _gy, _s * _kx, _s * _ky, 0, c_white, 1);
+    draw_sprite_ext(s_muerte_jugador, _f, _gx, _gy, _s * _fo.kx * _fo.z, _s * _fo.ky * _fo.z, 0, c_white, 1);
     gpu_set_texfilter(_tf);
+};
+
+// Oscuridad alrededor del jugador: un circulo de luz con borde suave y negro total por fuera. Al enfocar se cierra rapido hasta muerte_luz_radio
+// y, cuando termina la pausa, se cierra del todo (junto con el fundido a negro de alpha_muerte).
+muerte_dibujar_luz = function() {
+    if (!muerto || muerte_captura_pend || !sprite_exists(spr_captura)) return;
+    var _gw = display_get_gui_width(), _gh = display_get_gui_height();
+    var _u = min(_gw / 1280, _gh / 720);
+    var _fo = muerte_foco();
+    var _diag = point_distance(0, 0, _gw, _gh);
+    var _r = lerp(_diag * 1.6, muerte_luz_radio * _u, _fo.e);   // empieza fuera de la pantalla (sin oscurecer) y se cierra rapido
+    _r = lerp(_r, 2, clamp(alpha_muerte, 0, 1));
+    var _cx = _fo.ax, _cy = _fo.ay + 6 * _fo.z * _fo.ky;   // un poco mas abajo: el jugador cae al suelo
+    var _r_in = _r * 0.45, _big = _diag * 4, _seg = 48;
+    draw_set_alpha(1);
+    draw_set_color(c_black);
+    draw_primitive_begin(pr_trianglestrip);   // borde suave: de transparente a negro
+    for (var _i = 0; _i <= _seg; _i++) {
+        var _a = _i * 360 / _seg;
+        draw_vertex_colour(_cx + lengthdir_x(_r_in, _a), _cy + lengthdir_y(_r_in, _a), c_black, 0);
+        draw_vertex_colour(_cx + lengthdir_x(_r, _a),    _cy + lengthdir_y(_r, _a),    c_black, 1);
+    }
+    draw_primitive_end();
+    draw_primitive_begin(pr_trianglestrip);   // negro total por fuera
+    for (var _j = 0; _j <= _seg; _j++) {
+        var _b = _j * 360 / _seg;
+        draw_vertex_colour(_cx + lengthdir_x(_r, _b),   _cy + lengthdir_y(_r, _b),   c_black, 1);
+        draw_vertex_colour(_cx + lengthdir_x(_big, _b), _cy + lengthdir_y(_big, _b), c_black, 1);
+    }
+    draw_primitive_end();
+    draw_set_color(c_white);
 };
 
 // Mata al jugador: lo oculta, un cuadro despues toma la foto (ya sin el jugador), congela todo lo demas y reproduce la animacion de caida.
@@ -555,8 +633,8 @@ muerte_actualizar = function() {
 
     // muerto: se reproduce la animacion de caida (el fundido a negro empieza cuando va por el 60%); despues aparecen el texto y los botones
     muerte_anim_t += 1;
-    var _espera_fundido = round(muerte_anim_seg * 0.6 * _fps);
-    if (muerte_anim_t < _espera_fundido) { /* solo animacion */ }
+    var _espera_fundido = round((muerte_intro_seg + muerte_anim_seg + muerte_pausa_seg) * _fps);   // enfoque + caida + pausa mirandolo
+    if (muerte_anim_t < _espera_fundido) { /* solo enfoque y animacion */ }
     else if (alpha_muerte < 1) alpha_muerte = min(1, alpha_muerte + 1 / (duracion_muerte * _fps));
     else if (m_ui_t < 1) m_ui_t = min(1, m_ui_t + 1 / _fps);
     else if (m_bloqueo > 0) m_bloqueo -= 1;
@@ -584,12 +662,17 @@ muerte_actualizar = function() {
         }
         if (m_modo_mouse) m_sel = _bajo;
         _resaltado = m_sel;
+        if (_resaltado != m_sel_snd) {
+            if (_resaltado >= 0) sfx_play(sfx_boton_hover);
+            m_sel_snd = _resaltado;
+        }
 
         var _accion = "";
         if (mouse_check_button_pressed(mb_left) && _bajo >= 0) { m_sel = _bajo; _accion = m_botones[m_sel].accion; }
         else if (keyboard_check_pressed(vk_enter) && m_sel >= 0) _accion = m_botones[m_sel].accion;   // solo Enter (Espacio es el dash)
 
         if (_accion != "") {
+            sfx_play(sfx_boton_clic);
             // se guarda en arranque.ini antes de reiniciar (ver pausa_actualizar); o_menu abre directo la pantalla Mejoras
             p_menu_pantalla = (_accion == "mejoras") ? "mejoras" : "principal";
             p_saliendo = true;   // pausa_actualizar libera los recursos y llama a game_restart()
@@ -656,7 +739,10 @@ acto_actualizar = function() {
         else                                  acto_num = 0;
     }
     // si el nivel aparece desde negro, el cartel espera a que ya se vea
-    if (acto_num > 0 && alpha_entrada <= 0.4) acto_t += 1;
+    if (acto_num > 0 && alpha_entrada <= 0.4) {
+        acto_t += 1;
+        if (acto_t == 1) sfx_play(sfx_acto, 0.9);   // gong del cartel "ACTO I/II/III"
+    }
 };
 
 // Draw GUI, antes de los fundidos (asi el fundido de entrada y el de la muerte lo cubren)
@@ -710,7 +796,7 @@ nivel        = 1;
 nivel_max    = 12;       // al llegar aqui ya no se sube mas (la experiencia deja de sumar)
 xp           = 0;
 xp_base      = 10;       // experiencia para pasar del nivel 1 al 2
-xp_crece     = 1.25;     // cada nivel pide este numero de veces mas que el anterior (sube este numero para hacerlo mas dificil)
+xp_crece     = 1.28;     // (antes 1.25: se subio un poco para que cueste algo mas subir de nivel) cada nivel pide este numero de veces mas que el anterior (sube este numero para hacerlo mas dificil)
 xp_necesaria = function(_n) { return round(xp_base * power(xp_crece, _n - 1)); };
 xp_sig       = xp_necesaria(1);   // experiencia que falta llenar para el siguiente nivel
 cartas_pendientes   = 0;  // niveles ganados que todavia no eligieron carta
@@ -759,7 +845,7 @@ hud_estadisticas_arma = function() {
 };
 
 // ===== Cartas nuevas: valores (se cambian aqui para balancear) =====
-tajo_alcance           = 40;      // alcance base del tajo del caballero (px). Tajo mas largo lo multiplica
+tajo_alcance           = 52;      // alcance base del tajo del caballero (px; antes 40). Tajo mas largo lo multiplica
 tajo_largo_mult        = 1.75;    // Tajo mas largo: el alcance se multiplica por esto
 cadencia_por_nivel     = 0.30;    // Cadencia (soldado): +30% de disparos por segundo
 abanico_balas          = [1, 3, 5];   // Balas en abanico: balas por disparo segun el nivel de la carta (0, 1, 2)
@@ -815,6 +901,7 @@ golpe_bala = function(_en, _dir, _x, _y, _dano) {
 // Prende fuego al enemigo; con la carta Quemadura ralentizante tambien lo frena mientras arde
 quemar_enemigo = function(_en) {
     if (!instance_exists(_en)) return;
+    sfx_play(sfx_fuego, 0.45, 1.1, 0.08, 150);
     var _pasos = round(quemadura_seg * game_get_speed(gamespeed_fps));
     if (variable_instance_exists(_en, "quemar")) _en.quemar(_pasos, quemadura_dano * dano_mult());
     if (mejoras.quemadura_lenta > 0 && variable_instance_exists(_en, "ralentizar")) _en.ralentizar(lento_factor, _pasos);
@@ -824,13 +911,14 @@ quemar_enemigo = function(_en) {
 explosiones = [];   // anillos que se dibujan: { x, y, r, vida }
 explotar = function(_x, _y, _dano, _excluir) {
     array_push(explosiones, { x: _x, y: _y, r: explosion_radio, vida: 14 });
+    sfx_play(sfx_explosion_chica, 0.8, 1, 0.1, 70);
     var _lista = ds_list_create();
     var _n = collision_circle_list(_x, _y, explosion_radio, all, false, true, _lista, false);
     for (var _k = 0; _k < _n; _k++) {
         var _en = _lista[| _k];
         if (_en == _excluir) continue;
         if (!variable_instance_exists(_en, "es_enemigo") || !_en.es_enemigo) continue;
-        if (variable_instance_exists(_en, "recibir_dano")) _en.recibir_dano(_dano);
+        if (variable_instance_exists(_en, "recibir_dano")) _en.recibir_dano(_dano, false);   // false = sin el sonido de golpe (la explosion ya suena)
         else if (variable_instance_exists(_en, "hp")) _en.hp -= _dano;
         golpe_extra(_en, point_direction(_x, _y, _en.x, _en.y));
     }
@@ -868,10 +956,12 @@ apostar = function() {
         cartas_pendientes += apuesta_premio;
         apuesta_msg = "APUESTA GANADA: +" + string(apuesta_premio) + " cartas";
         apuesta_gano = true;
+        sfx_play(sfx_apuesta_gana);
     } else {
         hp = max(1, hp - hp_max * apuesta_costo);
         apuesta_msg = "APUESTA PERDIDA: -" + string(round(apuesta_costo * 100)) + "% de vida";
         apuesta_gano = false;
+        sfx_play(sfx_apuesta_pierde);
     }
     apuesta_msg_t = 150;
     show_debug_message("[apuesta] " + apuesta_msg);
@@ -898,18 +988,22 @@ curar = function(_cantidad) {
 recibir_dano = function(_cantidad) {
     if (muerto || inmune) return;
     hp -= _cantidad * (1 - reduccion_dano());
+    if (_cantidad > 0) sfx_play(sfx_jugador_dano, 1, 1, 0.05, 120);
 };
 
 ganar_xp = function(_cantidad) {
     if (muerto || nivel >= nivel_max) return;
     xp += _cantidad;
+    var _subio = false;
     while (xp >= xp_sig && nivel < nivel_max) {
         xp -= xp_sig;
         nivel += 1;
+        _subio = true;
         xp_sig = xp_necesaria(nivel);
         if (!cartas_bloqueadas()) cartas_pendientes += 1;   // tras vencer al jefe final se sigue subiendo de nivel, pero sin cartas
         show_debug_message("[xp] subiste al nivel " + string(nivel) + " (siguiente nivel: " + string(xp_sig) + " xp)");
     }
+    if (_subio) sfx_play(sfx_nivel, 0.9);
     if (nivel >= nivel_max) xp = 0;
 };
 
@@ -919,6 +1013,7 @@ enemigo_derrotado = function(_xp = 1) {
         curacion_cont += 1;
         if (curacion_cont >= curacion_cada) {
             curacion_cont = 0;
+            if (hp < hp_max && !muerto) sfx_play(sfx_curacion, 0.9);
             curar(curacion_por_nivel * mejoras.curacion);
         }
     }
@@ -974,6 +1069,17 @@ c_ch = 288;
 c_gap = 24;
 c_top = 0;
 c_btn_cy = 0;
+
+// Efectos de sonido (ver sfx_play en scr_musica): ultimo elemento que ya sono, para que el "hover" suene una sola vez al cambiar
+c_sel_snd   = -1;   // carta seleccionada
+c_hover_snd = -1;   // carta bajo el mouse
+p_sel_snd   = -1;   // boton resaltado del menu de pausa
+m_sel_snd   = -1;   // boton resaltado de la pantalla de muerte
+carga_snd   = -1;   // sonido de la carga del mago; se corta al soltar el clic, cambiar de clase, hacer dash, pausar o morir (ver Step_0)
+carga_sonido_detener = function() {
+    if (carga_snd != -1) audio_stop_sound(carga_snd);
+    carga_snd = -1;
+};
 
 // Texto pixelado: se dibuja chico en una surface y se amplia sin suavizado (igual que los de la pausa).
 texto_pixel = function(_texto, _fuente) {
@@ -1095,6 +1201,9 @@ cartas_actualizar = function() {
         c_mx = device_mouse_x_to_gui(0);
         c_my = device_mouse_y_to_gui(0);
         cartas_layout();
+        sfx_play(sfx_carta_aparece);
+        c_sel_snd = -1;
+        c_hover_snd = -1;
         if (state == "charge") { state = "idle"; carga = 0; }   // la carga del mago se cancela
         if (sprite_exists(spr_captura)) sprite_delete(spr_captura);
         spr_captura = sprite_create_from_surface(application_surface, 0, 0, surface_get_width(application_surface), surface_get_height(application_surface), false, false, 0, 0);
@@ -1138,6 +1247,16 @@ cartas_actualizar = function() {
         if (keyboard_check_pressed(vk_enter) && c_sel >= 0 && c_conf > 0.5) _confirmar = true;
     }
 
+    // sonidos: elegir una carta (clic o A/D) y pasar el mouse por encima
+    if (c_sel != c_sel_snd) {
+        if (c_sel >= 0) sfx_play(sfx_carta_elegir);
+        c_sel_snd = c_sel;
+    }
+    if (c_hover != c_hover_snd) {
+        if (c_hover >= 0 && c_hover != c_sel) sfx_play(sfx_boton_hover);
+        c_hover_snd = c_hover;
+    }
+
     // el boton Confirmar aparece al elegir una carta
     c_conf = clamp(c_conf + ((c_sel >= 0) ? 0.12 : -0.12), 0, 1);
     var _meta = (_sobre_conf || (!c_modo_mouse && c_sel >= 0)) ? p_frames - 1 : 0;
@@ -1145,6 +1264,7 @@ cartas_actualizar = function() {
 
     if (_confirmar) {
         var _carta = cartas_def[cartas_opciones[c_sel]];
+        if (_carta.mejora != "apuesta") sfx_play(sfx_carta_confirmar);   // la Apuesta suena segun el resultado (ver apostar)
         mejora_subir(_carta.mejora);
         cartas_pendientes -= 1;
         show_debug_message("[cartas] elegida: " + _carta.nombre + " (nivel " + string(mejoras[$ _carta.mejora]) + ")");
@@ -1257,6 +1377,7 @@ mejoras_actualizar = function() {
         if (!keyboard_check_pressed(ord("M"))) return;
         if (global.pausa || muerto || cartas_abierto || p_saliendo || p_bloqueo > 0 || alpha_entrada > 0.3) return;
         mejoras_abierto = true;
+        sfx_play(sfx_menu_abrir);
         if (state == "charge") { state = "idle"; carga = 0; }   // la carga del mago se cancela
         if (sprite_exists(spr_captura)) sprite_delete(spr_captura);
         spr_captura = sprite_create_from_surface(application_surface, 0, 0, surface_get_width(application_surface), surface_get_height(application_surface), false, false, 0, 0);
@@ -1265,6 +1386,7 @@ mejoras_actualizar = function() {
     }
     if (keyboard_check_pressed(ord("M")) || keyboard_check_pressed(vk_escape) || keyboard_check_pressed(vk_enter)) {
         mejoras_abierto = false;
+        sfx_play(sfx_menu_cerrar);
         instance_activate_all();
         if (sprite_exists(spr_captura)) sprite_delete(spr_captura);
         spr_captura = -1;

@@ -25,15 +25,20 @@ mejoras_actualizar();  // tecla M: menu con las mejoras (cartas) que ya tienes y
 // Musica: baja con la pausa, las cartas y el menu M; se apaga despues de morir (ver scr_musica)
 if (muerto) musica_volumen(0, 2000);
 else musica_volumen((global.pausa || cartas_abierto || mejoras_abierto) ? 0.3 : 1, 250);
+// El sonido de la carga del mago se corta si ya no estas cargando (soltar, cambiar de clase, dash) o si pausas / mueres / abres cartas
+if (carga_snd != -1 && (state != "charge" || global.pausa || muerto || cartas_abierto || mejoras_abierto)) carga_sonido_detener();
 if (global.pausa || muerto || cartas_abierto || mejoras_abierto) exit;
 acto_actualizar();   // cartel "ACTO I/II/III" al entrar a cada room de acto
 
-// ===== Cambiar de clase con la rueda del mouse =====
-var _wheel = mouse_wheel_up() - mouse_wheel_down();
-if (_wheel != 0) {
-    var _n = array_length(clases);
-    clase_idx = (clase_idx + _wheel + _n) mod _n;
+// ===== Cambiar de clase con las teclas 1 (Caballero), 2 (Mago) y 3 (Soldado) =====
+var _nueva = -1;
+if (keyboard_check_pressed(ord("1")) || keyboard_check_pressed(vk_numpad1)) _nueva = 0;
+if (keyboard_check_pressed(ord("2")) || keyboard_check_pressed(vk_numpad2)) _nueva = 1;
+if (keyboard_check_pressed(ord("3")) || keyboard_check_pressed(vk_numpad3)) _nueva = 2;
+if (_nueva != -1 && _nueva != clase_idx) {
+    clase_idx = _nueva;
     clase = clases[clase_idx];
+    sfx_play(_nueva == 0 ? sfx_clase_caballero : (_nueva == 1 ? sfx_clase_mago : sfx_clase_soldado));
     if (state == "charge") { state = "idle"; carga = 0; }   // cambiar de clase cancela la carga del mago
 }
 
@@ -52,9 +57,9 @@ explosiones_actualizar();   // anillos de las balas explosivas y mensaje de la a
 // ===== Nivel del dash segun las monedas =====
 if (debug_monedas && keyboard_check_pressed(ord("C"))) monedas += 5;   // solo para probar
 if (debug_mejoras) {                                                   // solo para probar
-    if (keyboard_check_pressed(ord("1"))) mejora_subir("dash_cargas");
-    if (keyboard_check_pressed(ord("2"))) mejora_subir("dash_recarga");
-    if (keyboard_check_pressed(ord("3"))) mejora_subir("doble_tajo");
+    if (keyboard_check_pressed(ord("7"))) mejora_subir("dash_cargas");
+    if (keyboard_check_pressed(ord("8"))) mejora_subir("dash_recarga");
+    if (keyboard_check_pressed(ord("9"))) mejora_subir("doble_tajo");
 }
 if (debug_cartas) {                                                    // solo para probar
     if (keyboard_check_pressed(ord("X"))) ganar_xp(5);
@@ -91,11 +96,18 @@ if (state == "attack") {
     if (atk_timer <= 0) state = (_len > 0) ? "walk" : "idle";
 }
 
+// ===== Invulnerabilidad: dura todo el dash y unos pasos mas (dash_gracia) =====
+if (inmune && state != "dash") {
+    inmune_gracia -= 1;
+    if (inmune_gracia <= 0) inmune = false;
+}
+
 // ===== Dash: barra espaciadora =====
 // Va hacia donde te mueves; si estas quieto, hacia el cursor. Cancela el ataque en curso.
 if (keyboard_check_pressed(vk_space) && state != "dash" && dash_cargas > 0) {
     if (dash_cargas >= dash_cargas_max) dash_recarga = dash_cd;   // empieza a recargar
     dash_cargas -= 1;
+    sfx_play(sfx_dash, 1, 1, 0.05);
     dash_dir   = (_len > 0) ? point_direction(0, 0, _h, _v) : point_direction(x, y, mouse_x, mouse_y);
     dash_vel   = _dn.dist / dash_dur;
     dash_timer = dash_dur;
@@ -126,6 +138,8 @@ if (state != "attack" && state != "dash" && state != "charge" && mouse_check_but
     if (clase == "mago") {
         state = "charge";
         carga = 0;
+        carga_sonido_detener();
+        carga_snd = sfx_play(sfx_mago_carga, 0.9, 1 / carga_mult());   // dura 1.5 s = carga maxima; con la carta Carga mas rapida suena mas rapido
         image_index = 0;
         proy_pendiente = false;
     } else {
@@ -179,6 +193,7 @@ if (state == "charge") {
             escala_efecto: lerp(mago_cfg.escala_efecto_min, mago_cfg.escala_efecto_max, carga_t) * escala_jugador,
             dano_efecto: mago_cfg.dano_efecto * dano_mult()
         });
+        sfx_play(sfx_mago_disparo, 0.8 + 0.2 * carga_t, 1.1 - 0.25 * carga_t, 0.04);   // mas carga = mas grave y fuerte
         // la animacion de ataque sigue desde el cuadro del hechizo hasta el final
         var _as = spr[$ clase].ataque[$ facing];
         var _spd = sprite_get_speed(_as);
@@ -214,7 +229,8 @@ if (state == "dash") {
     _dejar_espejismo = true;
     dash_timer -= 1;
     if (dash_timer <= 0) {
-        inmune = false;
+        inmune_gracia = dash_gracia;   // sigues invulnerable unos pasos mas (ver dash_gracia); se apaga abajo
+        if (inmune_gracia <= 0) inmune = false;
         state = (_len > 0) ? "walk" : "idle";
     }
 } else if (_len > 0) {
@@ -243,6 +259,15 @@ while (_ry != 0) {
 }
 x = clamp(x, 16, room_width - 16);
 y = clamp(y, 16, room_height - 16);
+// El panel de stats (Draw_64) tapa el borde de abajo de la pantalla: el jugador no puede bajar de su borde superior.
+// Se convierte ese borde a coordenadas del mundo con la camara (la camara se detiene en el borde del room, pero el jugador seguia bajando).
+if (view_enabled && view_visible[0]) {
+    var _cam_h = view_camera[0];
+    var _gui_w = display_get_gui_width(), _gui_h = display_get_gui_height();
+    var _gui_u = min(_gui_w / 1280, _gui_h / 720);   // misma escala que usa el panel
+    var _borde_y = camera_get_view_y(_cam_h) + camera_get_view_height(_cam_h) * (1 - hud_alto_gui * _gui_u / _gui_h);
+    y = min(y, _borde_y - col_aba - 2);   // col_aba = de el centro del jugador a sus pies
+}
 
 // ===== Dash: dano a los enemigos que atraviesas =====
 // Un enemigo es cualquier instancia con  es_enemigo = true  (y  hp).  Si tiene un metodo  recibir_dano(_cantidad)  lo llama;
@@ -304,6 +329,8 @@ if (proy_pendiente) {
             var _pa = point_direction(x, y, mouse_x, mouse_y);
             // el caballero lanza 1, 2 o 3 tajos (en triangulo) segun sus mejoras; las demas clases, uno
             var _forma = formacion_ataque(clase, _pd);
+            if (clase == "cab") sfx_play(sfx_tajo, 0.9, 1, 0.06, 40);
+            else if (clase == "sol") sfx_play(sfx_disparo_soldado, 0.7, 1, 0.07, 40);   // una vez por rafaga, aunque salgan 3 o 5 balas
             for (var _j = 0; _j < array_length(_forma); _j++) {
                 var _f = _forma[_j];
                 var _px = x + lengthdir_x(_f[0], _pa) + lengthdir_x(_f[1], _pa + 90);

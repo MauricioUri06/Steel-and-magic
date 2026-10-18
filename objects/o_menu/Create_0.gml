@@ -5,12 +5,15 @@ global.pausa = false;       // por si se vuelve aqui desde la pausa de un nivel
 pantalla = "principal";
 room_inicio = rm_acto_1_ruinas;   // room a la que va el boton Empezar
 meta_inicializar();
+musica_reiniciar();       // deja la musica como recien abierta (los globales sobreviven a game_restart; ver scr_musica)
 musica_para_room(room);   // suena mus_menu (ver scr_musica)
 meta_fila_hover = -1;
 meta_volver_hover = false;
 
 // --- estado ---
 sel = -1;                 // boton seleccionado (-1 = ninguno)
+sel_snd = -1;             // ultimo boton que ya hizo sonido de hover
+meta_hover_snd = -1;      // idem para las filas de la pantalla Mejoras
 modo_mouse = true;        // true: manda el cursor; false: mandan las teclas
 mx_prev = mouse_x;
 my_prev = mouse_y;

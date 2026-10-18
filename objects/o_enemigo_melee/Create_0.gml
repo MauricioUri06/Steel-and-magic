@@ -61,7 +61,7 @@ comportamiento = function() {
             if (timer <= 0) {
                 estado = "recuperar";
                 timer  = recuperacion;
-                cd     = cd_ataque;
+                cd     = max(0, cd_ataque - reduccion_cd);   // reduccion_cd: ver o_enemigo_base
             }
             break;
 

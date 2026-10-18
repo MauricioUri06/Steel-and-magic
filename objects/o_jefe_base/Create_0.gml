@@ -56,10 +56,11 @@ aviso_total      = 1;           // pasos totales del aviso actual (para avisos q
 recuperacion_extra = 0;         // pasos que se suman a la recuperacion del ataque actual (ej. aturdido)
 timer            = pausa_max;
 
-recibir_dano = function(_cantidad) {
+recibir_dano = function(_cantidad, _ruido = true) {
     if (invulnerable || estado == "transicion") return;
     hp -= _cantidad;
     flash = 6;
+    if (_ruido) sfx_play(sfx_golpe_enemigo, 1, 0.85, 0.06, 45);   // un poco mas grave: los jefes son pesados
 };
 
 // ===== Metodos que cada jefe reemplaza =====

@@ -1,0 +1,36 @@
+Steel and Magic: efectos de sonido (sfx_*.ogg)
+Sintesis propia con numpy/scipy (fuente/sfx.py): no usa samples ni SoundFont, sin licencias.
+demo_todos.ogg tiene todos en este orden, separados por 0.4 s.
+
+nombre                 dur   pico    rms  uso previsto
+sfx_tajo             0.31s   -8.0  -22.7  Caballero: cada tajo (clic izquierdo)
+sfx_disparo_soldado  0.16s  -10.0  -25.6  Soldado: cada bala (5 por segundo; usar volumen bajo)
+sfx_mago_carga       1.50s  -10.0  -23.5  Mago: mientras se mantiene el clic (dura 1.5 s = carga maxima; cortar al soltar)
+sfx_mago_disparo     0.65s   -7.0  -24.1  Mago: al soltar la bola de fuego
+sfx_explosion        1.13s   -4.0  -20.1  Mago: bola de fuego grande al impactar / explosion fuerte
+sfx_explosion_chica  0.45s   -9.0  -26.5  Soldado: carta Balas explosivas (suena con cada bala que explota; volumen bajo)
+sfx_golpe_enemigo    0.13s  -10.0  -25.2  Un proyectil o tajo golpea a un enemigo (muy frecuente)
+sfx_golpe_escudo     0.38s   -8.0  -23.4  Golpe contra el demonio con escudo (clang metalico)
+sfx_enemigo_muere    0.40s   -8.0  -24.1  Un enemigo normal muere (suena a carne + un poco metalico)
+sfx_jugador_dano     0.45s   -4.0  -16.4  El jugador recibe dano
+sfx_dash             0.34s   -6.0  -20.6  Espacio: dash
+sfx_fuego            0.60s  -11.0  -27.4  Llamas: quemadura de un enemigo o llamas del dash
+sfx_orbe             0.16s  -14.0  -24.7  Recoger un orbe de experiencia (suena muchas veces; variar el pitch en GameMaker)
+sfx_moneda           0.63s  -10.0  -23.2  Recoger una moneda
+sfx_nivel            2.00s   -4.0  -19.4  Subir de nivel (antes de la pantalla de cartas)
+sfx_curacion         1.09s  -10.0  -24.2  Carta Curacion: cada vez que cura
+sfx_compra           0.91s   -8.0  -22.1  Tienda de mejoras permanentes: compra con exito
+sfx_error            0.30s   -9.0  -17.7  Tienda: no alcanzan las monedas / accion no permitida
+sfx_carta_aparece    0.55s   -9.0  -26.1  Se abre la pantalla de cartas (una vez, no por carta)
+sfx_carta_elegir     0.13s  -12.0  -26.7  Seleccionar una carta (clic o A/D)
+sfx_carta_confirmar  1.30s   -6.0  -21.2  Confirmar la carta elegida
+sfx_apuesta_gana     2.27s   -4.0  -20.4  Carta Apuesta: ganaste (2 cartas extra)
+sfx_apuesta_pierde   1.40s   -6.0  -16.3  Carta Apuesta: perdiste (te quita vida)
+sfx_boton_hover      0.08s  -17.0  -29.5  Pasar el mouse sobre un boton
+sfx_boton_clic       0.16s  -10.0  -25.2  Clic en un boton
+sfx_menu_abrir       0.28s  -12.0  -24.8  Abrir pausa (Esc) o el menu M de mejoras
+sfx_menu_cerrar      0.25s  -12.0  -23.6  Cerrar pausa o el menu M
+sfx_clase_caballero  0.30s   -9.0  -23.4  Tecla 1: cambiar a Caballero
+sfx_clase_mago       0.63s   -9.0  -23.7  Tecla 2: cambiar a Mago
+sfx_clase_soldado    0.15s   -9.0  -25.9  Tecla 3: cambiar a Soldado
+sfx_acto             4.17s   -5.0  -19.9  Cartel 'ACTO I/II/III' (gong grave con reverb)

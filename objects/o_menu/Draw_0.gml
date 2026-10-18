@@ -55,8 +55,8 @@ else if (pantalla == "tutorial") {
         ["W A S D / Flechas", "Moverte"],
         ["Mouse",             "Apuntar"],
         ["Clic izquierdo",    "Atacar (mantenlo para seguir atacando)"],
-        ["Rueda del mouse",   "Cambiar de clase: Caballero, Mago o Soldado"],
-        ["Espacio",           "Dash: esquiva y hace daño a quien atraviesas"],
+        ["1 / 2 / 3",         "Cambiar de clase: 1 Caballero, 2 Mago, 3 Soldado"],
+        ["Espacio",           "Dash: eres invulnerable y haces daño a quien atraviesas"],
         ["M",                 "Ver las cartas (mejoras) que llevas en la partida"],
         ["Esc",               "Pausar el juego"]
     ];

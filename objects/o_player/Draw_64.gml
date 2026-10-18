@@ -8,9 +8,9 @@ var _arma = hud_estadisticas_arma();
 var _vida = clamp(hp / hp_max, 0, 1);
 var _max_nivel = nivel >= nivel_max;
 var _xp = _max_nivel ? 1 : clamp(xp / xp_sig, 0, 1);
-var _texto = make_colour_rgb(205, 221, 230);
-var _cian = make_colour_rgb(104, 222, 242);
-var _oro = make_colour_rgb(225, 189, 108);
+var _texto = make_colour_rgb(255, 236, 190);
+var _cian = make_colour_rgb(255, 247, 220);
+var _oro = make_colour_rgb(255, 222, 130);
 var _borde = [[0,92],[0,32],[13,23],[9,9],[33,13],[48,5],[65,11],
               [935,11],[952,5],[967,13],[991,9],[987,23],[1000,32],[1000,92]];
 var _n = array_length(_borde);
@@ -31,7 +31,7 @@ for (var _s = 3; _s >= 1; _s--) {
 }
 draw_set_alpha(1);
 for (var _capa = 0; _capa < 2; _capa++) {
-    draw_set_color((_capa == 0) ? make_colour_rgb(72, 88, 97) : make_colour_rgb(10, 19, 28));
+    draw_set_color((_capa == 0) ? make_colour_rgb(214, 170, 70) : make_colour_rgb(112, 82, 24));
     draw_primitive_begin(pr_trianglefan);
     draw_vertex(_x + 500 * _u, _y + 55 * _u);
     for (var _j = 0; _j <= _n; _j++) {
@@ -44,22 +44,22 @@ for (var _capa = 0; _capa < 2; _capa++) {
 }
 
 // Bisel y pequenas marcas de metal cepillado en el marco.
-draw_set_color(make_colour_rgb(125, 142, 149));
+draw_set_color(make_colour_rgb(255, 226, 140));
 for (var _edge = 1; _edge < _n - 1; _edge++) {
     var _a = _borde[_edge], _b = _borde[_edge + 1];
     draw_line_width(_x + _a[0] * _u, _y + _a[1] * _u, _x + _b[0] * _u, _y + _b[1] * _u, _u);
 }
 for (var _marca = 86; _marca < 930; _marca += 24) {
-    draw_set_color(make_colour_rgb(42, 58, 68));
+    draw_set_color(make_colour_rgb(84, 60, 14));
     draw_line_width(_x + _marca * _u, _y + 12 * _u, _x + (_marca + 6) * _u, _y + 15 * _u, _u);
 }
-draw_set_color(make_colour_rgb(113, 143, 151));
+draw_set_color(make_colour_rgb(240, 200, 100));
 for (var _ranura = 0; _ranura < 3; _ranura++) {
     var _ry = _y + (43 + _ranura * 8) * _u;
     draw_line_width(_x + 9 * _u, _ry, _x + 17 * _u, _ry - 3 * _u, _u);
     draw_line_width(_x + 983 * _u, _ry - 3 * _u, _x + 991 * _u, _ry, _u);
 }
-draw_set_color(make_colour_rgb(37, 54, 66));
+draw_set_color(make_colour_rgb(76, 54, 12));
 for (var _sep = 0; _sep < 3; _sep++) {
     var _dx = [_x + 98 * _u, _x + 215 * _u, _x + 760 * _u][_sep];
     draw_line_width(_dx, _y + 28 * _u, _dx, _gh - 13 * _u, _u);
@@ -67,11 +67,11 @@ for (var _sep = 0; _sep < 3; _sep++) {
 
 // Barras y valores: vida arriba, experiencia debajo.
 var _bx = _x + 234 * _u, _bw = 500 * _u;
-draw_set_color(make_colour_rgb(34, 49, 58));
+draw_set_color(make_colour_rgb(52, 36, 10));
 draw_rectangle(_bx, _y + 27 * _u, _bx + _bw, _y + 49 * _u, false);
 draw_set_color((_vida <= 0.25) ? make_colour_rgb(195, 62, 68) : make_colour_rgb(47, 137, 101));
 if (_vida > 0) draw_rectangle(_bx, _y + 27 * _u, _bx + _bw * _vida, _y + 49 * _u, false);
-draw_set_color(make_colour_rgb(25, 42, 55));
+draw_set_color(make_colour_rgb(52, 36, 10));
 draw_rectangle(_bx, _y + 61 * _u, _bx + _bw, _y + 75 * _u, false);
 draw_set_color(make_colour_rgb(42, 112, 149));
 if (_xp > 0) draw_rectangle(_bx, _y + 61 * _u, _bx + _bw * _xp, _y + 75 * _u, false);

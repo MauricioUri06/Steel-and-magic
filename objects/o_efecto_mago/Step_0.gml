@@ -16,7 +16,7 @@ if (fase == "activo") {
         for (var _k = 0; _k < _nhit; _k++) {
             var _en = _lista[| _k];
             if (!variable_instance_exists(_en, "es_enemigo") || !_en.es_enemigo) continue;
-            if (variable_instance_exists(_en, "recibir_dano")) _en.recibir_dano(dano);
+            if (variable_instance_exists(_en, "recibir_dano")) _en.recibir_dano(dano, false);   // false = sin sonido de golpe en cada pulso del fuego
             else if (variable_instance_exists(_en, "hp")) _en.hp -= dano;
             // carta Quemadura ralentizante: el fuego tambien frena a los enemigos que lo pisan (se renueva en cada pulso)
             if (instance_exists(o_player) && o_player.mejoras.quemadura_lenta > 0 && variable_instance_exists(_en, "ralentizar")) _en.ralentizar(o_player.lento_factor, 75);

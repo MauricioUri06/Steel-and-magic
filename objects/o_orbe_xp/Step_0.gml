@@ -17,6 +17,7 @@ if (_d < radio_iman || vel > 0) {
     y += lengthdir_y(min(vel, _d), _a);
 }
 if (_d <= JUGADOR_RADIO + radio) {
+    sfx_play(sfx_orbe, 1, 1, 0.12, 35);
     o_player.ganar_xp(valor);
     instance_destroy();
 }

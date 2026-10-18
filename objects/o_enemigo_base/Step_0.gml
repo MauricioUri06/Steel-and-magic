@@ -28,7 +28,7 @@ if (quemadura_t > 0) {
     quemadura_tick -= 1;
     if (quemadura_tick <= 0) {
         quemadura_tick = 30;
-        recibir_dano(quemadura_dano);   // pasa por recibir_dano: escudos y jefes aplican lo suyo
+        recibir_dano(quemadura_dano, false);   // pasa por recibir_dano: escudos y jefes aplican lo suyo (false = sin sonido de golpe)
     }
 }
 if (emp_f > 0.3) {

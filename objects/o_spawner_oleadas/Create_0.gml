@@ -43,8 +43,8 @@ tipos = [
 ];
 jefes = [o_jefe_dragon, o_jefe_orco_mecha, o_jefe_general];   // oleadas 10, 20 y 30
 
-puntos_de = function(_n) { return round(4 + _n * 1.6); };     // oleada 1: 6 puntos ... oleada 29: 50
-vida_mult = function(_n) { return 1 + (_n - 1) * 0.02; };     // oleada 29: +56% de vida
+puntos_de = function(_n) { return round(5 + _n * 1.9); };     // oleada 1: 7 puntos ... oleada 29: 60 (antes 4 + n*1.6: 6 ... 50, un 20% menos)
+vida_mult = function(_n) { return 1.25 + (_n - 1) * 0.025; }; // oleada 1: x1.25 de vida ... oleada 29: x1.95 (antes 1 + (n-1)*0.02: x1 ... x1.56)
 
 // true si hay un jefe vivo (uno muriendo ya no cuenta)
 jefe_vivo = function() {

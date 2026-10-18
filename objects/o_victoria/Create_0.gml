@@ -1,5 +1,5 @@
 // Pantalla final: usa el arte y el regreso al menu existentes.
-sfx_jingle(sfx_victoria);   // gran fanfarria de la victoria (ver scr_musica)
+sfx_jingle(sfx_victoria, SFX_VOL, false);   // gran fanfarria de la victoria; la musica del acto 3 se apaga y ya no vuelve (ver scr_musica)
 t = 0;
 hover = false;
 boton_frame = 0;
