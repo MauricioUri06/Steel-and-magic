@@ -49,6 +49,9 @@
   },
   "name":"Steel & Magic",
   "resources":[
+    {"id":{"name":"o_victoria","path":"objects/o_victoria/o_victoria.yy",},},
+    {"id":{"name":"spr_general_cenizas","path":"sprites/spr_general_cenizas/spr_general_cenizas.yy",},},
+    {"id":{"name":"spr_general_muerte","path":"sprites/spr_general_muerte/spr_general_muerte.yy",},},
     {"id":{"name":"o_efecto_mago","path":"objects/o_efecto_mago/o_efecto_mago.yy",},},
     {"id":{"name":"o_enemigo_base","path":"objects/o_enemigo_base/o_enemigo_base.yy",},},
     {"id":{"name":"o_enemigo_demonio_escudo","path":"objects/o_enemigo_demonio_escudo/o_enemigo_demonio_escudo.yy",},},

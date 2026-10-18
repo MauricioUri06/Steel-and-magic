@@ -735,6 +735,29 @@ clic_bloqueado       = false;  // true tras confirmar una carta: no ataca hasta 
 reduccion_dano  = function() { return clamp(armadura_por_nivel * mejoras.armadura, 0, 0.75); };
 vel_ataque_mult = function() { return 1 + vel_ataque_por_nivel * mejoras.vel_ataque; };
 
+// Mismos tiempos del ataque: la cadencia del HUD incluye el redondeo a pasos del juego.
+hud_fuente = font_add("Verdana", 12, true, false, 32, 255);
+hud_estadisticas_arma = function() {
+    var _fps = game_get_speed(gamespeed_fps);
+    var _vel = vel_ataque_mult();
+    var _pasos, _dano;
+    if (clase == "mago") {
+        _dano = round(lerp(mago_cfg.dano_min, mago_cfg.dano_max,
+            (state == "charge" || state == "attack") ? carga_t : 0) * dano_mult());
+        _pasos = max(1, round(mago_cfg.recarga * _fps / _vel));
+    } else {
+        var _arma = proy[$ clase];
+        var _spr = spr[$ clase].ataque[$ facing];
+        var _spd = sprite_get_speed(_spr);
+        if (sprite_get_speed_type(_spr) == spritespeed_framespersecond) _spd /= _fps;
+        _pasos = ceil(sprite_get_number(_spr) / max(_spd, 0.01));
+        if (_arma.cadencia > 0) _pasos = max(1, round(_fps / (_arma.cadencia * cadencia_mult())));   // carta Cadencia
+        if (_vel > 1) _pasos = max(1, round(_pasos / _vel));
+        _dano = _arma.dano * dano_mult();   // carta Canon de cristal
+    }
+    return { dano: _dano, ataques_segundo: _fps / _pasos };
+};
+
 // ===== Cartas nuevas: valores (se cambian aqui para balancear) =====
 tajo_alcance           = 40;      // alcance base del tajo del caballero (px). Tajo mas largo lo multiplica
 tajo_largo_mult        = 1.75;    // Tajo mas largo: el alcance se multiplica por esto

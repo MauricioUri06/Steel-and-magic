@@ -59,9 +59,9 @@ var _jefe = jefe_vivo();
 
 // ===== Victoria: se lanzo la ultima oleada (el jefe final) y ya no queda jefe =====
 if (oleada >= total_oleadas) {
-    if (array_length(cola) == 0 && !_jefe) {
+    if (array_length(cola) == 0 && !_jefe && !instance_exists(o_jefe_general)) {
         victoria = true;
-        sfx_jingle(sfx_victoria);   // gran fanfarria de la ultima oleada
+        instance_create_depth(0, 0, -12000, o_victoria);   // la fanfarria sfx_victoria suena en o_victoria
     }
     exit;
 }

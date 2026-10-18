@@ -17,6 +17,7 @@ hp_max = 500;
 hp     = hp_max;
 radio  = 24;
 escala_sprite = 1.15;   // el sprite (96x80) es grande: un poco menos que la escala del jugador
+dur_caida     = ceil(15 / anim_vel);   // lo que dura la animacion de muerte (15 cuadros)
 vel    = 1.2;
 color  = make_colour_rgb(150, 20, 30);
 
@@ -184,14 +185,62 @@ spr_por_estado = {
     aviso:     spr_general_aviso,
     atacar:    spr_general_ataque,
     recuperar: spr_general_recuperar,
-    cayendo:   spr_general_caida,
-    muerto:    spr_general_muerto,
+    cayendo:   spr_general_muerte,    // se cae y se deshace en cenizas (15 cuadros)
+    muerto:    spr_general_cenizas,   // queda el monton de cenizas y se desvanece
 
     f2_perseguir:  spr_general2_caminar,
     f2_transicion: spr_general2_aviso,
     f2_aviso:      spr_general2_aviso,
     f2_atacar:     spr_general2_ataque,
     f2_recuperar:  spr_general2_recuperar,
-    f2_cayendo:    spr_general2_caida,
-    f2_muerto:     spr_general2_muerto
+    f2_cayendo:    spr_general_muerte,
+    f2_muerto:     spr_general_cenizas
+};
+
+// El final usa la misma captura de escenario que la intro, con su propio reloj.
+muerte_final_t = 0;
+muerte_final_impacto = 0.22;
+muerte_final_ruptura = 1.6;
+muerte_final_cenizas = 4.8;
+muerte_final_titulo = 5.1;
+muerte_final_salida = 6.7;
+muerte_final_fin = 7.5;
+muerte_final_captura = -1;
+muerte_final_congelado = false;
+muerte_final_jugador = noone;
+muerte_final_nivel = 1;
+muerte_final_pose = spr_general_caminar;
+muerte_final_frame = 0;
+muerte_final_camara_x = 0;
+muerte_final_camara_y = 0;
+muerte_final_camara_w = room_width;
+muerte_final_camara_h = room_height;
+
+morir_normal = morir;
+morir = function() {
+    if (!es_enemigo) return;
+    muerte_final_jugador = instance_find(o_player, 0);
+    if (instance_exists(muerte_final_jugador)) muerte_final_nivel = muerte_final_jugador.nivel;
+    muerte_final_pose = buscar_sprite();
+    muerte_final_frame = floor(anim) mod sprite_get_number(muerte_final_pose);
+    morir_normal();   // conserva las monedas, la baja y los orbes; solo se paga una vez
+    hp = 0;
+    depth = -10001;
+
+    var _cam = view_camera[0];
+    if (_cam != -1) {
+        muerte_final_camara_x = camera_get_view_x(_cam);
+        muerte_final_camara_y = camera_get_view_y(_cam);
+        muerte_final_camara_w = camera_get_view_width(_cam);
+        muerte_final_camara_h = camera_get_view_height(_cam);
+    }
+
+    // Al caer el General se acaba el combate, incluidos sus ataques pendientes.
+    with (o_proyectil_enemigo) instance_destroy();
+    with (o_misil_enemigo) instance_destroy();
+    with (o_zona_peligro) instance_destroy();
+    with (o_onda_choque) instance_destroy();
+    with (o_enemigo_base) {
+        if (es_enemigo && !pesado) morir();
+    }
 };
