@@ -27,6 +27,7 @@ my_prev = _my;
 
 var _resaltado = -1;      // boton que se ve mecanico
 volver_hover = false;
+opt_hover = false;
 
 if (!fade_saliendo) {
     if (pantalla == "principal") {
@@ -58,6 +59,16 @@ if (!fade_saliendo) {
             menu_accion(botones[sel].accion);
         }
         _resaltado = sel;
+        // boton Options (arriba a la izquierda)
+        opt_hover = point_in_rectangle(_mx, _my, opt_x, opt_y, opt_x + opt_w, opt_y + opt_h);
+        if (opt_hover != opt_hover_snd) {
+            if (opt_hover) sfx_play(sfx_boton_hover);
+            opt_hover_snd = opt_hover;
+        }
+        if (opt_hover && bloqueo <= 0 && mouse_check_button_pressed(mb_left)) {
+            sfx_play(sfx_boton_clic);
+            menu_accion("opciones");
+        }
     } else if (pantalla == "tutorial") {
         // Tutorial: scroll con la rueda del mouse, flechas arriba/abajo, W/S o RePag/AvPag
         var _paso = (mouse_wheel_down() - mouse_wheel_up()) * 40;
@@ -72,6 +83,38 @@ if (!fade_saliendo) {
         var _volver = (bloqueo <= 0) && ((volver_hover && mouse_check_button_pressed(mb_left))
                       || keyboard_check_pressed(vk_escape) || keyboard_check_pressed(vk_backspace) || keyboard_check_pressed(vk_enter));
         if (_volver) { sfx_play(sfx_boton_clic); pantalla = "principal"; bloqueo = 15; }
+    } else if (pantalla == "opciones") {
+        // Opciones de sonido: arrastrar la barra con el mouse, o W/S para elegir y A/D (o flechas) para cambiar
+        var _on = array_length(opt_sliders);
+        if (keyboard_check_pressed(vk_down) || keyboard_check_pressed(ord("S"))) opt_sel = (opt_sel + 1) mod _on;
+        if (keyboard_check_pressed(vk_up)   || keyboard_check_pressed(ord("W"))) opt_sel = (opt_sel - 1 + _on) mod _on;
+        var _odx = (keyboard_check_pressed(vk_right) || keyboard_check_pressed(ord("D"))) - (keyboard_check_pressed(vk_left) || keyboard_check_pressed(ord("A")));
+        if (_odx != 0) {
+            opt_set(opt_sel, round((opt_get(opt_sel) + _odx * 0.05) * 20) / 20);
+            opciones_audio_guardar();
+            if (opt_sel == 1) sfx_play(sfx_boton_clic);   // para oir el nivel de los efectos
+        }
+        if (bloqueo <= 0 && mouse_check_button_pressed(mb_left)) {
+            for (var _oi = 0; _oi < _on; _oi++) {
+                var _ocy = opt_fila_y0 + _oi * opt_fila_sep;
+                if (point_in_rectangle(_mx, _my, opt_pista_x - 14, _ocy - 22, opt_pista_x + opt_pista_w + 14, _ocy + 22)) { opt_arrastre = _oi; opt_sel = _oi; }
+            }
+        }
+        if (opt_arrastre >= 0) {
+            if (mouse_check_button(mb_left)) {
+                var _ov = clamp(round((_mx - opt_pista_x) / opt_pista_w * 100) / 100, 0, 1);
+                if (_ov != opt_get(opt_arrastre)) opt_set(opt_arrastre, _ov);
+            } else {
+                opciones_audio_guardar();
+                if (opt_arrastre == 1) sfx_play(sfx_boton_clic);   // para oir el nivel de los efectos
+                opt_arrastre = -1;
+            }
+        }
+        // boton Volver, Esc, Backspace o Enter
+        volver_hover = point_in_rectangle(_mx, _my, room_width / 2 - boton_w / 2, volver_cy - boton_h / 2, room_width / 2 + boton_w / 2, volver_cy + boton_h / 2);
+        var _ovolver = (bloqueo <= 0) && ((volver_hover && mouse_check_button_pressed(mb_left))
+                       || keyboard_check_pressed(vk_escape) || keyboard_check_pressed(vk_backspace) || keyboard_check_pressed(vk_enter));
+        if (_ovolver) { opciones_audio_guardar(); opt_arrastre = -1; sfx_play(sfx_boton_clic); pantalla = "principal"; bloqueo = 15; }
     } else if (pantalla == "mejoras") {
         // Mejoras permanentes: entrada directa, sin crear ni pausar instancias.
         var _mu = min(room_width / 1280, room_height / 720);
@@ -119,3 +162,5 @@ for (var _j = 0; _j < _n; _j++) {
 }
 var _meta_v = (pantalla != "principal" && volver_hover) ? frames_boton - 1 : 0;
 volver_frame += clamp(_meta_v - volver_frame, -anim_vel, anim_vel);
+var _meta_o = (pantalla == "principal" && opt_hover) ? frames_boton - 1 : 0;
+opt_frame += clamp(_meta_o - opt_frame, -anim_vel, anim_vel);

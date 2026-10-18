@@ -21,6 +21,8 @@ proy_color = c_aqua;
 
 // Crea el proyectil. Un hijo la puede reemplazar para disparar distinto.
 disparar = function(_dir) {
+    if (proy_obj == o_misil_enemigo) sfx_play(sfx_misil_lanzar, 0.8, 1, 0.05, 90);
+    else sfx_play(sfx_enemigo_disparo, 0.8, 1, 0.08, 50);
     instance_create_depth(x + lengthdir_x(radio, _dir), y + lengthdir_y(radio, _dir), depth - 1, proy_obj,
                           { direccion: _dir, vel: proy_vel, dano: proy_dano, color: proy_color });
 };

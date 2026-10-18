@@ -76,9 +76,33 @@ if (pantalla == "principal") {
         draw_set_halign(fa_left);
         draw_set_valign(fa_top);
     }
+
+    // ----- boton Options (arriba a la izquierda) -----
+    var _ofr = clamp(floor(opt_frame), 0, frames_boton - 1);
+    draw_sprite_ext(s_boton_menu, _ofr, opt_x, opt_y, 1, 1, 0, c_white, 1);
+    var _ot = opt_frame / (frames_boton - 1);
+    var _ocol = merge_colour(make_colour_rgb(70, 38, 8), col_cian, _ot);
+    var _osom = merge_colour(make_colour_rgb(255, 224, 130), make_colour_rgb(4, 18, 28), _ot);
+    draw_sprite_ext(opt_spr, 0, opt_x + opt_w / 2, opt_y + opt_h / 2 + 1, 1, 1, 0, _osom, 1);
+    draw_sprite_ext(opt_spr, 0, opt_x + opt_w / 2, opt_y + opt_h / 2,     1, 1, 0, _ocol, 1);
+
+    // ----- creditos: esquina de abajo a la izquierda (el record ocupa la de la derecha) -----
+    // Sin escalar: con las fuentes a su tamano real el texto se ve completo y nitido
+    var _crx = 40;
+    var _cr_bajo = room_height - 26;
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_bottom);
+    draw_set_font(fuente_boton);
+    var _cr_alto2 = string_height("Gaira");
+    draw_text_colour(_crx + 2, _cr_bajo + 2, "Gaira", c_black, c_black, c_black, c_black, 0.7);
+    draw_text_colour(_crx, _cr_bajo, "Gaira", col_oro, col_oro, col_oro, col_oro, 1);
+    draw_set_font(fuente_texto);
+    draw_text_colour(_crx + 2, _cr_bajo - _cr_alto2 + 6, "Desarrollado por:", c_black, c_black, c_black, c_black, 0.7);
+    draw_text_colour(_crx, _cr_bajo - _cr_alto2 + 4, "Desarrollado por:", col_texto, col_texto, col_texto, col_texto, 1);
+    draw_set_valign(fa_top);
 }
 else if (pantalla == "tutorial") {
-    dibujar_panel("Tutorial");
+    dibujar_panel("Cómo jugar");
     // El contenido se recorta entre el titulo y el boton Volver y se desplaza con tut_scroll
     var _ar_top = 142, _ar_bot = 560;
     var _sc = gpu_get_scissor();
@@ -220,6 +244,39 @@ else if (pantalla == "mejoras") {
     draw_set_halign(fa_center);
     draw_set_color(make_colour_rgb(232, 239, 235));
     draw_text_transformed(room_width * 0.5, _mvy + 10 * _mu, "VOLVER AL MENU", 0.82 * _mu, 0.82 * _mu, 0);
+}
+else if (pantalla == "opciones") {
+    dibujar_panel("Options");
+    draw_set_valign(fa_middle);
+    for (var _oi = 0; _oi < array_length(opt_sliders); _oi++) {
+        var _ov = opt_get(_oi);
+        var _ocy = opt_fila_y0 + _oi * opt_fila_sep;
+        var _osel = (opt_sel == _oi);
+        var _ox0 = opt_pista_x, _ow = opt_pista_w;
+        draw_set_font(fuente_texto);
+        draw_set_halign(fa_left);
+        var _otc = _osel ? col_oro : col_texto;
+        draw_text_colour(220, _ocy, opt_sliders[_oi].nombre, _otc, _otc, _otc, _otc, 1);
+        // barra: fondo, parte llena y borde
+        draw_set_color(make_colour_rgb(30, 40, 58));
+        draw_rectangle(_ox0, _ocy - 6, _ox0 + _ow, _ocy + 6, false);
+        draw_set_color(col_oro_osc);
+        draw_rectangle(_ox0, _ocy - 6, _ox0 + _ow * _ov, _ocy + 6, false);
+        draw_set_color(_osel ? col_oro : col_cian);
+        draw_rectangle(_ox0 - 1, _ocy - 7, _ox0 + _ow + 1, _ocy + 7, true);
+        // perilla
+        var _okx = _ox0 + _ow * _ov;
+        draw_set_color(col_oro);
+        draw_rectangle(_okx - 8, _ocy - 16, _okx + 8, _ocy + 16, false);
+        draw_set_color(col_oro_osc);
+        draw_rectangle(_okx - 8, _ocy - 16, _okx + 8, _ocy + 16, true);
+        draw_set_color(c_white);
+        // porcentaje
+        draw_text_colour(_ox0 + _ow + 40, _ocy, string(round(_ov * 100)) + "%", col_cian, col_cian, col_cian, col_cian, 1);
+    }
+    draw_set_halign(fa_left);
+    draw_set_valign(fa_top);
+    dibujar_boton(room_width / 2, volver_cy, volver_frame, volver_spr);
 }
 
 // ===== Fundido =====

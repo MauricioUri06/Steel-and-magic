@@ -1,10 +1,11 @@
 // ===== Menu principal de Steel & Magic =====
-// Pantallas: "principal", "tutorial", "mejoras". Se maneja con el mouse o con teclado (W/S o flechas + Enter, Esc para volver).
+// Pantallas: "principal", "tutorial", "mejoras", "opciones". Se maneja con el mouse o con teclado (W/S o flechas + Enter, Esc para volver).
 
 global.pausa = false;       // por si se vuelve aqui desde la pausa de un nivel
 pantalla = "principal";
 room_inicio = rm_acto_1_ruinas;   // room a la que va el boton Empezar
 meta_inicializar();
+opciones_audio_inicializar();   // volumen de musica y efectos guardado (ver scr_musica)
 musica_reiniciar();       // deja la musica como recien abierta (los globales sobreviven a game_restart; ver scr_musica)
 musica_para_room(room);   // suena mus_menu (ver scr_musica)
 meta_fila_hover = -1;
@@ -45,7 +46,7 @@ capas = [
 // --- botones (s_boton_menu: 6 cuadros, 0 = dorado ... 5 = mecanico) ---
 botones = [
     { texto: "Empezar",  accion: "empezar",  frame: 0 },
-    { texto: "Tutorial", accion: "tutorial", frame: 0 },
+    { texto: "Cómo jugar", accion: "tutorial", frame: 0 },
     { texto: "Mejoras",  accion: "mejoras",  frame: 0 },
     { texto: "Salir",    accion: "salir",    frame: 0 }
 ];
@@ -84,6 +85,7 @@ menu_accion = function(_a) {
         case "salir":    fade_saliendo = true; accion_pendiente = "salir";   fade_vel = 1 / (0.5 * game_get_speed(gamespeed_fps)); break;
         case "tutorial": pantalla = "tutorial"; bloqueo = 15; tut_scroll = 0; tut_scroll_obj = 0; break;
         case "mejoras":  pantalla = "mejoras"; bloqueo = 15; break;
+        case "opciones": pantalla = "opciones"; bloqueo = 15; opt_arrastre = -1; break;
     }
 };
 
@@ -146,3 +148,28 @@ dibujar_panel = function(_titulo) {
 // --- sprites de texto de los botones ---
 for (var _i = 0; _i < array_length(botones); _i++) botones[_i].spr_texto = crear_sprite_texto(botones[_i].texto);
 volver_spr = crear_sprite_texto("Volver");
+
+// --- boton Options (arriba a la izquierda, a escala 1) y pantalla de opciones de sonido ---
+opt_spr = crear_sprite_texto("Options");
+opt_w = sprite_get_width(s_boton_menu);
+opt_h = sprite_get_height(s_boton_menu);
+opt_x = 24;               // esquina de arriba a la izquierda del boton
+opt_y = 24;
+opt_frame = 0;
+opt_hover = false;
+opt_hover_snd = false;
+opt_sliders = [
+    { nombre: "Música",  var_global: "vol_musica" },
+    { nombre: "Efectos", var_global: "vol_efectos" }
+];
+opt_sel = 0;              // control resaltado (teclado)
+opt_arrastre = -1;        // control que se esta arrastrando con el mouse (-1 = ninguno)
+opt_pista_x = 520;        // inicio de la barra
+opt_pista_w = 460;        // largo de la barra
+opt_fila_y0 = 270;        // altura (centro) del primer control
+opt_fila_sep = 100;       // separacion entre controles
+opt_get = function(_i) { return variable_global_get(opt_sliders[_i].var_global); };
+opt_set = function(_i, _v) {
+    variable_global_set(opt_sliders[_i].var_global, clamp(_v, 0, 1));
+    opciones_audio_aplicar();
+};

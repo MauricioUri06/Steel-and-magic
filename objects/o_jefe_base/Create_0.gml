@@ -85,7 +85,22 @@ elegir_ataque = function() {
     return _a;
 };
 
+// Sonido al empezar cada ataque (segun el nombre del ataque; lo llama comportamiento justo antes de al_atacar)
+sonido_ataque = function(_n) {
+    switch (_n) {
+        case "aliento":  sfx_play(sfx_aliento, 1, 1, 0.03, 300); break;
+        case "picada":
+        case "salto":    sfx_play(sfx_picada, 1, 1, 0.05, 150); break;
+        case "tajo":
+        case "teletajo": sfx_play(sfx_tajo_jefe, 1, 1, 0.05, 120); break;
+        case "invocar":  sfx_play(sfx_invocar, 1, 1, 0.02, 300); break;
+        case "misiles":  sfx_play(sfx_misil_lanzar, 1, 0.9, 0.05, 150); break;
+    }
+};
+sfx_intro = sfx_rugido_dragon;   // rugido de la presentacion (cada jefe pone el suyo)
+
 empezar_aviso = function(_pasos) {
+    // (sin sonido de aviso antes de cada ataque: se quito a pedido de Mauricio; sfx_jefe_aviso queda sin usar)
     estado   = "aviso";
     timer    = _pasos;
     aviso_total = max(1, _pasos);
@@ -101,6 +116,7 @@ comportamiento = function() {
         intro_espera -= 1;
         if (intro_espera == 0 && sprite_exists(intro_spr)) {
             instance_create_depth(0, 0, -10000, o_intro_jefe, { spr: intro_spr, nombre: string_upper(nombre), subtitulo: subtitulo });
+            // (sin rugido al entrar el jefe: se quito a pedido de Mauricio; sfx_intro de cada jefe queda sin usar)
         }
     }
 
@@ -134,6 +150,7 @@ comportamiento = function() {
                 estado = "atacar";
                 t_ataque = 0;
                 ataque_terminado = false;
+                sonido_ataque(ataque.nombre);
                 al_atacar(ataque.nombre);
             }
             break;

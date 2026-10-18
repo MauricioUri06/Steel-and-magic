@@ -14,6 +14,40 @@
 #macro SFX_VOL 0.85          // volumen de los jingles (sfx_muerte, sfx_jefe, sfx_victoria)
 #macro SFX_EFECTOS_VOL 0.8   // volumen general de los efectos de sonido cortos (sfx_play): disparos, golpes, cartas, botones...
 
+// ===== Opciones de sonido (las ajusta el jugador en el boton Options del menu) =====
+// global.vol_musica (musica y jingles) y global.vol_efectos (efectos cortos) van de 0 a 1 y se guardan en steel_magic_opciones.ini.
+// Se multiplican por MUSICA_VOL / SFX_EFECTOS_VOL, que siguen siendo el balance interno entre musica y efectos.
+// (los globales sobreviven a game_restart, asi que el ajuste se conserva al volver al menu)
+function opciones_audio_inicializar() {
+    if (variable_global_exists("vol_musica") && variable_global_exists("vol_efectos")) return;
+    global.vol_musica = 1;
+    global.vol_efectos = 1;
+    ini_open("steel_magic_opciones.ini");
+    global.vol_musica  = clamp(ini_read_real("sonido", "musica", 1), 0, 1);
+    global.vol_efectos = clamp(ini_read_real("sonido", "efectos", 1), 0, 1);
+    ini_close();
+}
+
+function opciones_audio_guardar() {
+    opciones_audio_inicializar();
+    ini_open("steel_magic_opciones.ini");
+    ini_write_real("sonido", "musica", global.vol_musica);
+    ini_write_real("sonido", "efectos", global.vol_efectos);
+    ini_close();
+}
+
+// volumen base de la musica ya con el ajuste del jugador
+function musica_vol() {
+    opciones_audio_inicializar();
+    return MUSICA_VOL * global.vol_musica;
+}
+
+// aplica en vivo el volumen de la musica que esta sonando (mientras se mueve el control en Options)
+function opciones_audio_aplicar() {
+    musica_inicializar();
+    if (musica_sonando()) audio_sound_gain(global.musica_inst, musica_vol() * musica_mult_total(), 0);
+}
+
 function musica_inicializar() {
     if (!variable_global_exists("musica_inst")) {
         global.musica_inst = -1;   // instancia que esta sonando
@@ -72,14 +106,14 @@ function musica_cambiar(_snd) {
     if (_snd == -1) return;
     global.musica_inst = audio_play_sound(_snd, 100, true);
     audio_sound_gain(global.musica_inst, 0, 0);
-    audio_sound_gain(global.musica_inst, MUSICA_VOL * musica_mult_total(), MUSICA_FADE_MS);
+    audio_sound_gain(global.musica_inst, musica_vol() * musica_mult_total(), MUSICA_FADE_MS);
 }
 
 function musica_volumen(_mult, _ms = 250) {
     musica_inicializar();
     if (_mult == global.musica_mult) return;
     global.musica_mult = _mult;
-    if (musica_sonando()) audio_sound_gain(global.musica_inst, MUSICA_VOL * musica_mult_total(), _ms);
+    if (musica_sonando()) audio_sound_gain(global.musica_inst, musica_vol() * musica_mult_total(), _ms);
 }
 
 // volumen real de la musica = (pausa, muerte...) x (jingle)
@@ -92,7 +126,7 @@ function musica_mult_total() {
 function musica_duck(_mult, _ms = 300) {
     musica_inicializar();
     global.musica_duck = _mult;
-    if (musica_sonando()) audio_sound_gain(global.musica_inst, MUSICA_VOL * musica_mult_total(), _ms);
+    if (musica_sonando()) audio_sound_gain(global.musica_inst, musica_vol() * musica_mult_total(), _ms);
 }
 
 // Jingle de una sola vez. Si llega otro mientras suena uno, el nuevo lo reemplaza.
@@ -104,7 +138,8 @@ function sfx_jingle(_snd, _vol = SFX_VOL, _vuelve_musica = true) {
     if (global.jingle_inst != -1) audio_stop_sound(global.jingle_inst);
     global.jingle_id += 1;
     global.jingle_inst = audio_play_sound(_snd, 200, false);
-    audio_sound_gain(global.jingle_inst, _vol, 0);
+    opciones_audio_inicializar();
+    audio_sound_gain(global.jingle_inst, _vol * global.vol_musica, 0);
     musica_duck(0, 300);
     if (!_vuelve_musica) {
         musica_cambiar(-1);   // fundido de salida y se detiene; el duck queda en 0, asi que ni una room nueva la hace sonar
@@ -129,7 +164,8 @@ function sfx_play(_snd, _vol = 1, _pitch = 1, _var = 0, _espera_ms = 0) {
         global.sfx_ultimo[$ _k] = current_time;
     }
     var _inst = audio_play_sound(_snd, 50, false);
-    audio_sound_gain(_inst, SFX_EFECTOS_VOL * _vol, 0);
+    opciones_audio_inicializar();
+    audio_sound_gain(_inst, SFX_EFECTOS_VOL * global.vol_efectos * _vol, 0);
     var _p = _pitch * (1 + random_range(-_var, _var));
     if (_p != 1) audio_sound_pitch(_inst, _p);
     return _inst;

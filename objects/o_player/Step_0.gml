@@ -80,8 +80,8 @@ if (_nv != dash_nivel) {
 }
 var _dn = dash_niveles[dash_nivel];
 // maximo de cargas y tiempo de recarga: nivel por monedas + mejoras
-dash_cargas_max = _dn.cargas + mejoras.dash_cargas;
-dash_cd = max(1, round(_dn.cd * (1 - dash_recarga_mejora * mejoras.dash_recarga)));
+dash_cargas_max = _dn.cargas + mejoras.dash_cargas + meta_bonos.cargas_dash_extra;   // + mejora permanente Dash
+dash_cd = max(1, round(_dn.cd * (1 - dash_recarga_mejora * mejoras.dash_recarga) * meta_bonos.multiplicador_dash_recarga));
 dash_cargas = min(dash_cargas, dash_cargas_max);
 
 // recuperar cargas de dash con el tiempo
@@ -112,7 +112,7 @@ if (keyboard_check_pressed(vk_space) && state != "dash" && dash_cargas > 0) {
     dash_cargas -= 1;
     sfx_play(sfx_dash, 1, 1, 0.05);
     dash_dir   = (_len > 0) ? point_direction(0, 0, _h, _v) : point_direction(x, y, mouse_x, mouse_y);
-    dash_vel   = _dn.dist / dash_dur;
+    dash_vel   = _dn.dist * meta_bonos.multiplicador_dash_distancia / dash_dur;
     dash_timer = dash_dur;
     state      = "dash";
     atk_timer  = 0;

@@ -11,9 +11,12 @@ if (instance_number(o_player) > 1) {
 // ===== Stats =====
 // OJO: antes era "speed = 5". "speed" es una variable reservada de GameMaker
 // (mueve la instancia sola hacia la derecha), por eso se renombra a move_speed.
-move_speed = 5;
-hp = 30;
-hp_max = 30;   // vida maxima (la curacion no pasa de aqui)
+// Mejoras permanentes (pantalla Mejoras del menu, se compran con las monedas de partidas anteriores): se leen UNA vez al empezar la partida
+meta_inicializar();
+meta_bonos = meta_obtener_bonos();   // vida_extra, multiplicador_velocidad, multiplicador_dano, dash, radio de xp, rerolls_extra, cuarta_opcion
+move_speed = 5 * meta_bonos.multiplicador_velocidad;
+hp_max = 30 + meta_bonos.vida_extra;   // vida maxima (la curacion no pasa de aqui); 30 base + 5 por nivel de la mejora Vida maxima
+hp = hp_max;
 
 // ===== Clases (se cambian con las teclas 1 = Caballero, 2 = Mago, 3 = Soldado; tambien el teclado numerico) =====
 clases        = ["cab", "mago", "sol"];
@@ -39,8 +42,8 @@ spr = {
         ataque:   { abajo: s_ataque_cab_abajo,   arriba: s_ataque_cab_arriba,   izquierda: s_ataque_cab_izquierda,   derecha: s_ataque_cab_derecha }
     },
     mago: {
-        // el sprite de reposo hacia arriba del mago se llama "s_resposo_mago_arriba" (typo en el nombre del asset)
-        reposo:   { abajo: s_reposo_mago_abajo,   arriba: s_resposo_mago_arriba,   izquierda: s_reposo_mago_izquierda,   derecha: s_reposo_mago_derecha },
+        // el sprite de reposo hacia arriba del mago se llama "s_reposo_mago_arriba" (typo en el nombre del asset)
+        reposo:   { abajo: s_reposo_mago_abajo,   arriba: s_reposo_mago_arriba,   izquierda: s_reposo_mago_izquierda,   derecha: s_reposo_mago_derecha },
         caminata: { abajo: s_caminata_mago_abajo, arriba: s_caminata_mago_arriba, izquierda: s_caminata_mago_izquierda, derecha: s_caminata_mago_derecha },
         ataque:   { abajo: s_ataque_mago_abajo,   arriba: s_ataque_mago_arriba,   izquierda: s_ataque_mago_izquierda,   derecha: s_ataque_mago_derecha }
     },
@@ -92,7 +95,8 @@ flecha_escala = 0.75;  // tamano de la flecha (1 = original, 0.5 = mitad)
 // Cada nivel del dash se desbloquea al llegar a cierta cantidad de monedas.
 // Para dar monedas desde otro objeto (por ejemplo al recoger una):  o_player.monedas += 1;
 monedas = 0;
-debug_monedas = true;   // true: la tecla C suma 5 monedas para probar. Ponlo en false cuando ya haya monedas reales.
+monedas_cobradas = false;   // true cuando las monedas de esta partida ya pasaron al banco (al morir o al ganar)
+debug_monedas = false;   // true: la tecla C suma 5 monedas para probar. Ponlo en false cuando ya haya monedas reales.
 
 dash_niveles = [
     // Estos niveles (mejoras permanentes) suben la DISTANCIA y el DANO del dash. Las cargas y la recarga solo cambian con cartas.
@@ -105,7 +109,7 @@ dash_niveles = [
     { monedas: 100, dist: 250, cd: 70, cargas: 1, dano: 7 }
 ];
 dash_nivel   = 0;                          // se calcula solo segun las monedas
-dash_cargas  = dash_niveles[0].cargas;     // dashes disponibles ahora
+dash_cargas  = dash_niveles[0].cargas + meta_bonos.cargas_dash_extra;     // dashes disponibles ahora (mejora permanente Dash: +1 carga cada 2 niveles)
 dash_recarga = 0;                          // pasos que faltan para recuperar una carga
 dash_dur     = 8;                          // duracion del dash en pasos
 dash_timer   = 0;
@@ -201,7 +205,7 @@ mejora_subir = function(_id) {
 
 // Dash: maximo de cargas y recarga = nivel por monedas + mejoras (se recalculan en el Step)
 dash_recarga_mejora = 0.25;   // cada nivel de "dash recarga" baja el tiempo de recarga en este %
-dash_cargas_max = dash_niveles[0].cargas;
+dash_cargas_max = dash_niveles[0].cargas + meta_bonos.cargas_dash_extra;
 dash_cd         = dash_niveles[0].cd;
 
 // Tajos del caballero segun mejoras.doble_tajo + mejoras.tajo_triangular (0, 1 o 2): cada tajo = [adelante (px), lateral (px), desvio de angulo]
@@ -598,7 +602,7 @@ morir = function() {
 
     // El oro conseguido al derrotar enemigos pertenece a esta partida.
     // Al morir pasa al banco permanente antes de que game_restart reinicie todo.
-    meta_cobrar_monedas_run(monedas);
+    if (!monedas_cobradas) { meta_cobrar_monedas_run(monedas); monedas_cobradas = true; }
 
     alpha_muerte = 0;
     m_ui_t = 0;
@@ -873,7 +877,7 @@ apuesta_prob           = 0.5;     // Apuesta: probabilidad de ganar
 apuesta_premio         = 2;       // ...si ganas: cartas extra para elegir
 apuesta_costo          = 0.4;     // ...si pierdes: pierdes este % de la vida maxima (nunca te mata, queda minimo 1)
 
-dano_mult     = function() { return (mejoras.canon_cristal > 0) ? canon_dano_mult : 1; };
+dano_mult     = function() { return meta_bonos.multiplicador_dano * ((mejoras.canon_cristal > 0) ? canon_dano_mult : 1); };   // mejora permanente Ataque (+8% por nivel) x Canon de cristal
 cadencia_mult = function() { return 1 + cadencia_por_nivel * mejoras.cadencia; };
 carga_mult    = function() { return max(0.2, 1 - carga_rapida_por_nivel * mejoras.carga_rapida); };   // < 1 = carga mas rapido
 bola_mult     = function() { return 1 + (bola_grande_mult - 1) * mejoras.bola_grande; };
@@ -1059,7 +1063,9 @@ cartas_def = [
     { mejora: "apuesta",            spr: s_carta_apuesta,               nombre: "Apuesta",                rareza: 1, req: "" },
     { mejora: "canon_cristal",      spr: s_carta_canon_cristal,         nombre: "Canon de cristal",       rareza: 2, req: "" }
 ];
-cartas_max_opciones = 3;   // cuantas cartas se ofrecen cada vez
+cartas_max_opciones = 3 + (meta_bonos.cuarta_opcion ? 1 : 0);   // cuantas cartas se ofrecen cada vez (mejora permanente Cuarta carta: 4)
+rerolls_restantes = meta_bonos.rerolls_extra;   // mejora permanente Reroll: veces que puedes cambiar las cartas ofrecidas en esta partida (tecla R o el boton)
+c_rr_frame = 0;            // animacion del boton Reroll
 cartas_opciones = [];      // indices de cartas_def ofrecidos ahora
 cartas_abierto  = false;   // true mientras se muestra la pantalla de cartas (el juego esta pausado)
 c_t = 0;                   // 0..1: aparicion de las cartas
@@ -1125,6 +1131,8 @@ cartas_ui = {
     dig:       []
 };
 for (var _d = 0; _d < 10; _d++) array_push(cartas_ui.dig, texto_pixel(string(_d), _fc));
+cartas_ui.reroll = [-1];   // reroll[n] = "Reroll [R] xn" (n = 1 a 3, el maximo de la mejora)
+for (var _rri = 1; _rri <= 3; _rri++) array_push(cartas_ui.reroll, texto_pixel("Reroll [R] x" + string(_rri), _fb));
 font_delete(_fc);
 font_delete(_fb);
 
@@ -1139,6 +1147,7 @@ cartas_liberar = function() {
     sprite_delete(cartas_ui.m_barra);
     sprite_delete(cartas_ui.m_vacio);
     for (var _d = 0; _d < array_length(cartas_ui.dig); _d++) sprite_delete(cartas_ui.dig[_d]);
+    for (var _q = 1; _q < array_length(cartas_ui.reroll); _q++) sprite_delete(cartas_ui.reroll[_q]);
     cartas_ui = undefined;
 };
 
@@ -1171,13 +1180,21 @@ cartas_elegir_opciones = function() {
 
 // Tamano y posicion de las cartas segun el tamano de la pantalla (coordenadas GUI)
 cartas_layout = function() {
+    var _gw = display_get_gui_width();
     var _gh = display_get_gui_height();
     c_esc = max(1, round(_gh * 0.58 / sprite_get_height(s_carta_curacion) * 2) / 2);
+    // con 4 cartas (mejora permanente Cuarta carta) se achican de a medio punto hasta que quepan en el ancho
+    var _nc = cartas_max_opciones, _w0 = sprite_get_width(s_carta_curacion);
+    while (c_esc > 1 && (_nc * _w0 * c_esc + (_nc - 1) * round(_w0 * c_esc * 0.12)) > _gw - 24) c_esc -= 0.5;
     c_cw  = sprite_get_width(s_carta_curacion) * c_esc;
     c_ch  = sprite_get_height(s_carta_curacion) * c_esc;
     c_gap = round(c_cw * 0.12);
     c_top = round(_gh * 0.47 - c_ch / 2);
     c_btn_cy = c_top + c_ch + 22 + p_h / 2;
+};
+// Boton Reroll (mejora permanente): a la derecha del boton Confirmar, a la misma altura
+cartas_reroll_rect = function() {
+    return { x: display_get_gui_width() / 2 + p_w / 2 + 24, y: c_btn_cy - 24, w: 192, h: 48 };
 };
 cartas_rect = function(_i) {
     var _n = array_length(cartas_opciones);
@@ -1232,6 +1249,8 @@ cartas_actualizar = function() {
         var _r = cartas_rect(_i);
         if (point_in_rectangle(_mx, _my, _r.x, _r.y - 14, _r.x + _r.w, _r.y + _r.h)) _bajo = _i;
     }
+    var _rr = cartas_reroll_rect();
+    var _sobre_rr = (rerolls_restantes > 0) && point_in_rectangle(_mx, _my, _rr.x, _rr.y, _rr.x + _rr.w, _rr.y + _rr.h);
     var _sobre_conf = (c_sel >= 0 && c_conf > 0.5) && point_in_rectangle(_mx, _my, _gw / 2 - p_w / 2, c_btn_cy - p_h / 2, _gw / 2 + p_w / 2, c_btn_cy + p_h / 2);
 
     // teclado: izquierda / derecha (A / D) eligen carta, Enter confirma (Espacio no, es el dash)
@@ -1244,13 +1263,35 @@ cartas_actualizar = function() {
     }
     c_hover = c_modo_mouse ? _bajo : -1;
 
-    var _confirmar = false;
+    var _confirmar = false, _reroll = false;
     if (c_bloqueo <= 0) {
         if (mouse_check_button_pressed(mb_left)) {
             if (_bajo >= 0) c_sel = _bajo;
             else if (_sobre_conf) _confirmar = true;
+            else if (_sobre_rr) _reroll = true;
         }
         if (keyboard_check_pressed(vk_enter) && c_sel >= 0 && c_conf > 0.5) _confirmar = true;
+        if (keyboard_check_pressed(ord("R")) && rerolls_restantes > 0) _reroll = true;
+    }
+
+    // Reroll: se sortean otras cartas (gasta uno de los rerolls de esta partida)
+    if (_reroll && rerolls_restantes > 0) {
+        var _nuevas = cartas_elegir_opciones();
+        if (array_length(_nuevas) > 0) {
+            rerolls_restantes -= 1;
+            cartas_opciones = _nuevas;
+            c_sel = -1;
+            c_hover = -1;
+            c_conf = 0;
+            c_t = 0;
+            c_sel_snd = -1;
+            c_hover_snd = -1;
+            c_bloqueo = 10;
+            sfx_play(sfx_carta_aparece);
+        }
+        c_mx = _mx;
+        c_my = _my;
+        return;
     }
 
     // sonidos: elegir una carta (clic o A/D) y pasar el mouse por encima
@@ -1267,6 +1308,7 @@ cartas_actualizar = function() {
     c_conf = clamp(c_conf + ((c_sel >= 0) ? 0.12 : -0.12), 0, 1);
     var _meta = (_sobre_conf || (!c_modo_mouse && c_sel >= 0)) ? p_frames - 1 : 0;
     c_btn_frame += clamp(_meta - c_btn_frame, -p_anim_vel, p_anim_vel);
+    c_rr_frame += clamp((_sobre_rr ? p_frames - 1 : 0) - c_rr_frame, -p_anim_vel, p_anim_vel);
 
     if (_confirmar) {
         var _carta = cartas_def[cartas_opciones[c_sel]];
@@ -1350,6 +1392,20 @@ cartas_dibujar_ui = function() {
         var _ts = merge_colour(make_colour_rgb(255, 224, 130), make_colour_rgb(4, 18, 28), _tt);
         draw_sprite_ext(cartas_ui.confirmar, 0, _gw / 2, _by + p_esc, p_esc, p_esc, 0, _ts, c_conf);
         draw_sprite_ext(cartas_ui.confirmar, 0, _gw / 2, _by,         p_esc, p_esc, 0, _tc, c_conf);
+    }
+
+    // boton Reroll (solo si la mejora permanente te dejo rerolls y aun te quedan)
+    if (rerolls_restantes > 0) {
+        var _rr = cartas_reroll_rect();
+        var _ra = clamp(c_t * 2, 0, 1);
+        var _rf = clamp(floor(c_rr_frame), 0, p_frames - 1);
+        draw_sprite_ext(s_boton_menu, _rf, _rr.x, _rr.y, 1, 1, 0, c_white, _ra);
+        var _rt = c_rr_frame / (p_frames - 1);
+        var _rtc = merge_colour(make_colour_rgb(70, 38, 8), make_colour_rgb(110, 235, 255), _rt);
+        var _rts = merge_colour(make_colour_rgb(255, 224, 130), make_colour_rgb(4, 18, 28), _rt);
+        var _rspr = cartas_ui.reroll[min(rerolls_restantes, 3)];
+        draw_sprite_ext(_rspr, 0, _rr.x + _rr.w / 2, _rr.y + _rr.h / 2 + 1, 1, 1, 0, _rts, _ra);
+        draw_sprite_ext(_rspr, 0, _rr.x + _rr.w / 2, _rr.y + _rr.h / 2,     1, 1, 0, _rtc, _ra);
     }
 
     gpu_set_texfilter(_tf);

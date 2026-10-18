@@ -13,7 +13,8 @@ event_inherited();
 nombre = "General Demonio";
 subtitulo = "Jefe del Acto III";
 intro_spr = spr_general_intro;   // ilustracion de la presentacion (o_intro_jefe)
-hp_max = 600;   // antes 500 (+20%)
+sfx_intro = sfx_rugido_general;   // rugido de la presentacion
+hp_max = 720;   // antes 500, luego 600: el jefe final es el mas duro (dragon 480, orco 600)
 hp     = hp_max;
 radio  = 24;
 escala_sprite = 1.15;   // el sprite (96x80) es grande: un poco menos que la escala del jugador
@@ -254,6 +255,11 @@ morir = function() {
                 muerte_final_clase
             );
             muerte_final_jugador.victoria_registrada = true;
+        }
+        // las monedas de la partida pasan al banco al ganar (mejoras permanentes)
+        if (!muerte_final_jugador.monedas_cobradas) {
+            meta_cobrar_monedas_run(muerte_final_jugador.monedas);
+            muerte_final_jugador.monedas_cobradas = true;
         }
     }
     hp = 0;

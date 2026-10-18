@@ -141,7 +141,7 @@ draw_text_transformed(_x + 930 * _u, _y + 35 * _u, "ATQ/S", 0.85 * _u, 0.85 * _u
 draw_set_color(_oro);
 draw_text_transformed(_x + 156 * _u, _y + 35 * _u, "ORO", 0.85 * _u, 0.85 * _u, 0);
 draw_text_transformed(_x + 156 * _u, _y + 64 * _u, string(monedas), 1.3 * _u, 1.3 * _u, 0);
-draw_text_transformed(_x + 817 * _u, _y + 64 * _u, string(_arma.dano), 1.3 * _u, 1.3 * _u, 0);
+draw_text_transformed(_x + 817 * _u, _y + 64 * _u, string(round(_arma.dano * 10) / 10), 1.3 * _u, 1.3 * _u, 0);
 draw_set_color(c_white);
 draw_text_transformed(_x + 54 * _u, _y + 64 * _u, string(nivel), 1.5 * _u, 1.5 * _u, 0);
 draw_set_color(_cian);

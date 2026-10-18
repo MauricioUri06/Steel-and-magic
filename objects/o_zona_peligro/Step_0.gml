@@ -5,6 +5,8 @@ switch (fase) {
             if (jugador_cerca(x, y, radio)) danar_jugador(dano);
             fase  = "impacto";
             timer = dur_impacto;
+            if (estilo == "fuego") sfx_play(sfx_enemigo_llama, 1, 0.8, 0.08, 80);   // llamarada
+            else sfx_play(sfx_explosion_chica, 1, 0.9, 0.08, 80);                    // algo cae del cielo y explota
         }
         break;
 

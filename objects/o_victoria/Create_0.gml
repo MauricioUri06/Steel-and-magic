@@ -47,6 +47,11 @@ if (!record_ya_guardado && instance_exists(jugador)) {
         jugador.victoria_registrada = true;
     }
 }
+// Las monedas de la partida tambien pasan al banco al ganar (al morir lo hace o_player.morir)
+if (instance_exists(jugador) && variable_instance_exists(jugador, "monedas_cobradas") && !jugador.monedas_cobradas) {
+    meta_cobrar_monedas_run(jugador.monedas);
+    jugador.monedas_cobradas = true;
+}
 record_guardado = global.meta_progreso.record;
 
 fuente_titulo = font_add("Georgia", 54, true, false, 32, 255);

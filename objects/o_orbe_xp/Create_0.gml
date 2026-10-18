@@ -5,6 +5,7 @@ if (!variable_instance_exists(id, "valor")) valor = 1;
 
 radio      = 3 + min(valor, 5);   // los que valen mas se ven mas grandes
 radio_iman = 90;                  // distancia a la que empieza a volar hacia el jugador
+if (instance_exists(o_player) && variable_instance_exists(o_player, "meta_bonos")) radio_iman *= o_player.meta_bonos.multiplicador_radio_monedas;   // mejora permanente Radio de experiencia
 vel        = 0;
 vel_max    = 9;
 acel       = 0.6;

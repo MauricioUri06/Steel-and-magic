@@ -43,6 +43,7 @@ comportamiento = function() {
             if (timer <= 0) {
                 estado = "atacar";
                 golpeo = false;
+                sfx_play((tipo_ataque == "embestida") ? sfx_enemigo_embestida : sfx_enemigo_ataque, 0.8, 1, 0.08, 70);
                 timer  = (tipo_ataque == "embestida") ? dur_embestida : 6;
             }
             break;

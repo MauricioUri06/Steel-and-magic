@@ -12,6 +12,7 @@ explotando = 0;
 impactar = function(_al_jugador) {
     if (explotando > 0) return;
     explotando = dur_explosion;
+    sfx_play(sfx_explosion_chica, 1, 0.9, 0.08, 60);
     vel = 0;
     if (jugador_cerca(x, y, area)) danar_jugador(dano);
 };

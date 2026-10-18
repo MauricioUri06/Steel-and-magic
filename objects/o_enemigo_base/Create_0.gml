@@ -64,7 +64,9 @@ recibir_dano = function(_cantidad, _ruido = true) {
 
 // Deja de ser enemigo (no recibe golpes, no estorba) y empieza la animacion de muerte.
 morir = function() {
-    sfx_play(sfx_enemigo_muere, 0.9, 1, 0.1, 40);
+    if (pesado) sfx_play(sfx_jefe_muere, 1, 1, 0, 0);    // jefes: gran explosion
+    else        sfx_play(sfx_enemigo_muere, 0.9, 1, 0.1, 40);
+    if (monedas_drop >= 2) sfx_play(sfx_moneda, pesado ? 0.9 : 0.45, 1, 0.05, 150);   // las monedas de verdad (elfo, orco exo, elite y jefes)
     if (instance_exists(o_player)) {
         o_player.monedas += monedas_drop;
         o_player.enemigo_derrotado(0);   // cuenta la baja (carta de Curacion); la xp va en los orbes

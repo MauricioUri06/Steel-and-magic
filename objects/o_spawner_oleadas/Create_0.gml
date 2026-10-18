@@ -30,7 +30,7 @@ trans_espera  = 3 * game_get_speed(gamespeed_fps);    // se ve la muerte del jef
 trans_fundido = round(0.6 * game_get_speed(gamespeed_fps));   // pasos que tarda en ponerse negra la pantalla
 pausa_acto    = 4 * game_get_speed(gamespeed_fps);    // en la room nueva, la primera oleada llega a los 4 s
 debug          = false;  // true: la tecla N lanza la siguiente oleada ya (para probar).
-debug_matar    = true;   // true: la tecla U mata a toda la oleada y lanza la siguiente (para probar). Ponlo en false para la version final.
+debug_matar    = false;   // true: la tecla U mata a toda la oleada y lanza la siguiente (para probar). Ponlo en false para la version final.
 
 // tipos de enemigos: coste = puntos que gasta, desde = oleada desde la que puede aparecer
 tipos = [
@@ -104,5 +104,7 @@ aparecer = function(_obj) {
         _e.hp_max = round(_e.hp_max * vida_mult(oleada));
         _e.hp = _e.hp_max;
     }
+    _e.hp_max = round(_e.hp_max * DIF_VIDA);   // dificultad global (ver scr_enemigos): tambien vale para los jefes
+    _e.hp = _e.hp_max;
     crear_onda(_p[0], _p[1], 40, 2, 0, make_colour_rgb(170, 60, 220));   // portal (sin dano)
 };
