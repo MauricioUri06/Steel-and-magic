@@ -174,7 +174,7 @@ mejoras = {
     curacion: 0, armadura: 0, vel_ataque: 0,                            // generales
     dash_cargas: 0, dash_recarga: 0,                                    // dash
     doble_tajo: 0, tajo_triangular: 0, tajo_largo: 0,                   // caballero
-    cadencia: 0, balas_abanico: 0, balas_explosivas: 0,                 // soldado
+    cadencia: 0, balas_abanico: 0, balas_explosivas: 0, perforacion: 0, // soldado
     carga_rapida: 0, bola_grande: 0, quemadura_lenta: 0,                // mago
     balas_incendiarias: 0, fuego_dash: 0,                               // hibridas
     empuje: 0, apuesta: 0, canon_cristal: 0                             // empuje y riesgo / recompensa
@@ -183,7 +183,7 @@ mejoras_max = {
     curacion: 3, armadura: 3, vel_ataque: 3,
     dash_cargas: 2, dash_recarga: 1,
     doble_tajo: 1, tajo_triangular: 1, tajo_largo: 1,
-    cadencia: 1, balas_abanico: 2, balas_explosivas: 1,
+    cadencia: 1, balas_abanico: 2, balas_explosivas: 1, perforacion: 1,
     carga_rapida: 2, bola_grande: 1, quemadura_lenta: 1,
     balas_incendiarias: 1, fuego_dash: 1,
     empuje: 2, apuesta: 1, canon_cristal: 1
@@ -1049,6 +1049,7 @@ cartas_def = [
     { mejora: "cadencia",           spr: s_carta_cadencia,              nombre: "Cadencia",               rareza: 0, req: "" },
     { mejora: "balas_abanico",      spr: s_carta_balas_abanico,         nombre: "Balas en abanico",       rareza: 1, req: "" },
     { mejora: "balas_explosivas",   spr: s_carta_balas_explosivas,      nombre: "Balas explosivas",       rareza: 2, req: "" },
+    { mejora: "perforacion",        spr: s_carta_perforacion,           nombre: "Perforacion",            rareza: 0, req: "" },
     // mago
     { mejora: "carga_rapida",       spr: s_carta_carga_rapida,          nombre: "Carga mas rapida",       rareza: 0, req: "" },
     { mejora: "bola_grande",        spr: s_carta_bola_grande,           nombre: "Bola maxima mas grande", rareza: 1, req: "" },
